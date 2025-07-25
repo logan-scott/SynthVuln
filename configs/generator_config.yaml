@@ -1,0 +1,376 @@
+# Default file paths for generators
+default_paths:
+  asset_output: data/raw/assets.json
+  findings_output: data/raw/findings.json
+  nvd_data_dir: data/raw/vulzoo/processed/nvd-database
+
+# Asset type definitions - comprehensive list covering enterprise environments
+asset_types:
+- Desktop                 # End-user workstations
+- Laptop                  # Portable end-user devices
+- Mobile device           # Smartphones, tablets
+- Workstation             # High-performance user systems
+- Server                  # Generic server systems
+- Webserver               # HTTP/HTTPS serving systems
+- Storage server          # File/block storage systems
+- Virtualization server   # Hypervisor hosts
+- Virtual machine         # Guest VMs
+- Container               # Containerized applications
+- Kubernetes cluster      # Container orchestration
+- Serverless              # Function-as-a-Service
+- Database server         # Data storage systems
+- Application server      # Business logic tier
+- Mail server             # Email infrastructure
+- Firewall                # Network security appliances
+- Load balancer           # Traffic distribution
+- Router                  # Network routing devices
+- Switch                  # Network switching devices
+- Proxy server            # Forward/reverse proxies
+- DNS server              # Domain name resolution
+- DHCP server             # IP address assignment
+- Identity server         # Authentication/authorization
+- VPN server              # Remote access gateways
+
+# Location definitions - typical enterprise network zones
+locations:
+- Remote                  # Work-from-home, mobile users
+- Internal                # Corporate LAN/office networks
+- Data center             # On-premises server facilities
+- Cloud                   # Public cloud deployments
+
+# Common ports used across different asset types
+common_ports:
+- 22                      # SSH
+- 80                      # HTTP
+- 443                     # HTTPS
+- 3389                    # RDP
+- 8080                    # Alternative HTTP
+- 8443                    # Alternative HTTPS
+- 3306                    # MySQL
+- 5432                    # PostgreSQL
+# Asset to location mapping - defines where each asset type can be deployed
+asset_location_mapping:
+  Desktop:                  # End-user workstations
+  - Remote                  # Work-from-home setups
+  - Internal                # Office environments
+  Laptop:                   # Portable devices
+  - Remote                  # Mobile/home workers
+  - Internal                # Office use
+  Mobile device:            # Smartphones/tablets
+  - Remote                  # Primarily mobile/remote usage
+  Workstation:              # High-performance systems
+  - Remote                  # Remote power users
+  - Internal                # Office-based specialists
+  Server:                   # Generic servers
+  - Internal                # Small office servers
+  - Data center             # Enterprise hosting
+  - Cloud                   # Cloud deployments
+  Webserver:                # HTTP/HTTPS servers
+  - Internal                # Internal web apps
+  - Data center             # Production hosting
+  - Cloud                   # Cloud-hosted sites
+  Storage server:           # File/block storage
+  - Internal                # Office file servers
+  - Data center             # Enterprise storage
+  - Cloud                   # Cloud storage services
+  Virtualization server:    # Hypervisor hosts
+  - Internal                # Office virtualization
+  - Data center             # Enterprise virtualization
+  - Cloud                   # Cloud compute hosts
+  Virtual machine:          # Guest VMs
+  - Internal                # Office VMs
+  - Data center             # Enterprise VMs
+  - Cloud                   # Cloud instances
+  Container:                # Containerized apps
+  - Internal                # Development containers
+  - Data center             # Production containers
+  - Cloud                   # Cloud container services
+  Kubernetes cluster:       # Container orchestration
+  - Internal                # Development clusters
+  - Data center             # Production clusters
+  - Cloud                   # Managed K8s services
+  Serverless:               # Function-as-a-Service
+  - Cloud                   # Cloud-only deployment model
+  Database server:          # Data storage
+  - Internal                # Office databases
+  - Data center             # Enterprise databases
+  - Cloud                   # Cloud database services
+  Application server:       # Business logic tier
+  - Internal                # Internal applications
+  - Data center             # Production app servers
+  - Cloud                   # Cloud application hosting
+  Mail server:              # Email infrastructure
+  - Internal                # On-premises email
+  - Data center             # Hosted email services
+  - Cloud                   # Cloud email providers
+  Firewall:                 # Network security
+  - Internal                # Office network protection
+  - Data center             # Data center perimeter
+  Load balancer:            # Traffic distribution
+  - Internal                # Internal load balancing
+  - Data center             # Data center load balancing
+  - Cloud                   # Cloud load balancer services
+  Router:                   # Network routing
+  - Internal                # Office network routing
+  - Data center             # Data center networking
+  Switch:                   # Network switching
+  - Internal                # Office network switching
+  - Data center             # Data center switching
+  Proxy server:             # Forward/reverse proxies
+  - Internal                # Office proxy services
+  - Data center             # Enterprise proxies
+  - Cloud                   # Cloud proxy services
+  DNS server:               # Domain name resolution
+  - Internal                # Internal DNS
+  - Data center             # Authoritative DNS
+  - Cloud                   # Cloud DNS services
+  DHCP server:              # IP address assignment
+  - Internal                # Office DHCP
+  - Data center             # Data center DHCP
+  Identity server:          # Authentication/authorization
+  - Internal                # Office identity services
+  - Data center             # Enterprise identity
+  - Cloud                   # Cloud identity providers
+  VPN server:               # Remote access
+  - Internal                # Office VPN gateways
+  - Data center             # Enterprise VPN
+  - Cloud                   # Cloud VPN services
+# Asset to port mapping - defines typical open ports for each asset type
+asset_port_mapping:
+  Desktop:                  # End-user workstations
+  - 22                      # SSH (Linux/macOS)
+  - 3389                    # RDP (Windows Remote Desktop)
+  - 5900                    # VNC (Remote desktop)
+  Laptop:                   # Portable devices
+  - 22                      # SSH access
+  - 3389                    # RDP for remote work
+  - 5900                    # VNC remote access
+  Mobile device:            # Smartphones/tablets
+  - 80                      # HTTP (mobile apps)
+  - 443                     # HTTPS (secure mobile apps)
+  - 8080                    # Alternative HTTP
+  Workstation:              # High-performance systems
+  - 22                      # SSH (development/admin)
+  - 3389                    # RDP access
+  - 8080                    # Development servers
+  Server:                   # Generic servers
+  - 22                      # SSH management
+  - 80                      # HTTP services
+  - 443                     # HTTPS services
+  - 8080                    # Alternative HTTP
+  - 8443                    # Alternative HTTPS
+  Webserver:                # HTTP/HTTPS servers
+  - 80                      # Standard HTTP
+  - 443                     # Standard HTTPS
+  - 8080                    # Alternative HTTP
+  - 8443                    # Alternative HTTPS
+  Storage server:           # File/block storage
+  - 22                      # SSH management
+  - 445                     # SMB/CIFS (Windows shares)
+  - 2049                    # NFS (Network File System)
+  - 8080                    # Web-based management
+  Virtualization server:    # Hypervisor hosts
+  - 22                      # SSH management
+  - 80                      # Web management interface
+  - 443                     # Secure web management
+  - 902                     # VMware console
+  - 903                     # VMware remote console
+  Virtual machine:          # Guest VMs
+  - 22                      # SSH access
+  - 80                      # HTTP services
+  - 443                     # HTTPS services
+  - 3389                    # RDP (Windows VMs)
+  Container:                # Containerized apps
+  - 22                      # SSH (if enabled)
+  - 80                      # HTTP application
+  - 443                     # HTTPS application
+  - 8080                    # Alternative HTTP
+  Kubernetes cluster:       # Container orchestration
+  - 22                      # SSH to nodes
+  - 6443                    # Kubernetes API server
+  - 8080                    # Dashboard/metrics
+  - 10250                   # Kubelet API
+  - 10251                   # Kube-scheduler
+  Serverless:               # Function-as-a-Service
+  - 80                      # HTTP triggers
+  - 443                     # HTTPS triggers
+  Database server:          # Data storage
+  - 22                      # SSH management
+  - 3306                    # MySQL/MariaDB
+  - 5432                    # PostgreSQL
+  - 1433                    # Microsoft SQL Server
+  - 1521                    # Oracle Database
+  Application server:       # Business logic tier
+  - 22                      # SSH management
+  - 80                      # HTTP application
+  - 443                     # HTTPS application
+  - 8080                    # Alternative HTTP
+  - 8443                    # Alternative HTTPS
+  - 9000                    # Application-specific port
+  Mail server:              # Email infrastructure
+  - 22                      # SSH management
+  - 25                      # SMTP (outgoing mail)
+  - 110                     # POP3 (email retrieval)
+  - 143                     # IMAP (email access)
+  - 993                     # IMAPS (secure IMAP)
+  - 995                     # POP3S (secure POP3)
+  Firewall:                 # Network security
+  - 22                      # SSH management
+  - 80                      # Web management
+  - 443                     # Secure web management
+  - 161                     # SNMP monitoring
+  Load balancer:            # Traffic distribution
+  - 22                      # SSH management
+  - 80                      # HTTP load balancing
+  - 443                     # HTTPS load balancing
+  - 8080                    # Management interface
+  - 9000                    # Health check/stats
+  Router:                   # Network routing
+  - 22                      # SSH management
+  - 23                      # Telnet (legacy)
+  - 80                      # Web management
+  - 161                     # SNMP monitoring
+  - 162                     # SNMP traps
+  Switch:                   # Network switching
+  - 22                      # SSH management
+  - 23                      # Telnet (legacy)
+  - 80                      # Web management
+  - 161                     # SNMP monitoring
+  - 162                     # SNMP traps
+  Proxy server:             # Forward/reverse proxies
+  - 22                      # SSH management
+  - 80                      # HTTP proxy
+  - 443                     # HTTPS proxy
+  - 3128                    # Squid proxy default
+  - 8080                    # Alternative proxy port
+  DNS server:               # Domain name resolution
+  - 22                      # SSH management
+  - 53                      # DNS queries
+  - 80                      # Web management
+  - 443                     # Secure web management
+  DHCP server:              # IP address assignment
+  - 22                      # SSH management
+  - 67                      # DHCP server
+  - 68                      # DHCP client
+  - 80                      # Web management
+  Identity server:          # Authentication/authorization
+  - 22                      # SSH management
+  - 80                      # Web interface
+  - 443                     # Secure web interface
+  - 389                     # LDAP
+  - 636                     # LDAPS (secure LDAP)
+  VPN server:               # Remote access
+  - 22                      # SSH management
+  - 80                      # Web management
+  - 443                     # Secure web management
+  - 1194                    # OpenVPN
+  - 1723                    # PPTP VPN
+# Base internet exposure probability by asset type (0.0 = never exposed, 1.0 = always exposed)
+asset_internet_exposure_base:
+  Desktop: 0.05                # 5% - Rarely internet-facing (remote access only)
+  Laptop: 0.1                 # 10% - Occasionally exposed for remote work
+  Mobile device: 0.15          # 15% - Often connected to internet/cellular
+  Workstation: 0.05            # 5% - Usually internal, some remote access
+  Server: 0.25                 # 25% - Some servers need internet access
+  Webserver: 0.8               # 80% - Most web servers are internet-facing
+  Storage server: 0.1          # 10% - Usually internal, some cloud storage
+  Virtualization server: 0.15  # 15% - Mostly internal, some cloud hypervisors
+  Virtual machine: 0.3         # 30% - Mix of internal and cloud VMs
+  Container: 0.35              # 35% - Many containers serve web applications
+  Kubernetes cluster: 0.4      # 40% - Often hosts internet-facing services
+  Serverless: 0.7              # 70% - Usually triggered by internet events
+  Database server: 0.05        # 5% - Rarely directly internet-facing
+  Application server: 0.5      # 50% - Many serve web applications
+  Mail server: 0.6             # 60% - Need internet for email delivery
+  Firewall: 0.2                # 20% - Some have management interfaces exposed
+  Load balancer: 0.65          # 65% - Often front internet-facing services
+  Router: 0.15                 # 15% - Some have remote management
+  Switch: 0.05                 # 5% - Usually internal network only
+  Proxy server: 0.45           # 45% - Forward proxies need internet access
+  DNS server: 0.55             # 55% - Authoritative DNS needs internet
+  DHCP server: 0.05            # 5% - Internal network service only
+  Identity server: 0.25        # 25% - Some federated identity services
+  VPN server: 0.85             # 85% - Must be internet-accessible for remote users
+
+# Location-based exposure multipliers (applied to base probabilities)
+location_exposure_multiplier:
+  Remote: 1.5                  # 150% - Home networks less secure
+  Internal: 0.3                # 30% - Corporate networks more protected
+  Data center: 0.8             # 80% - Professional hosting, some exposure
+  Cloud: 1.2                   # 120% - Cloud services often internet-facing
+# Asset type distribution weights (percentages) - reflects typical enterprise environments
+# Higher volume assets (end-user devices) have higher percentages
+asset_type_distribution:
+  Desktop: 25.0                # 25% - Most common end-user device in offices
+  Laptop: 20.0                 # 20% - Primary mobile/remote work device
+  Workstation: 8.0             # 8% - Specialized high-performance systems
+  Mobile device: 15.0          # 15% - Smartphones/tablets (BYOD + corporate)
+  Server: 8.0                  # 8% - Generic servers (physical + virtual)
+  Virtual machine: 6.0         # 6% - VMs across various platforms
+  Webserver: 3.0               # 3% - HTTP/HTTPS serving systems
+  Application server: 2.5      # 2.5% - Business application hosting
+  Database server: 2.0         # 2% - Data storage and management
+  Storage server: 1.5          # 1.5% - File/block storage systems
+  Mail server: 1.0             # 1% - Email infrastructure
+  DNS server: 0.8              # 0.8% - Domain name resolution
+  Load balancer: 0.7           # 0.7% - Traffic distribution systems
+  Firewall: 0.6                # 0.6% - Network security appliances
+  Proxy server: 0.5            # 0.5% - Forward/reverse proxy systems
+  Identity server: 0.5         # 0.5% - Authentication/authorization
+  VPN server: 0.4              # 0.4% - Remote access gateways
+  DHCP server: 0.4             # 0.4% - IP address assignment
+  Router: 0.3                  # 0.3% - Network routing devices
+  Switch: 0.8                  # 0.8% - Network switching (more common than routers)
+  Virtualization server: 0.6   # 0.6% - Hypervisor host systems
+  Container: 1.0               # 1% - Containerized applications
+  Kubernetes cluster: 0.3      # 0.3% - Container orchestration platforms
+  Serverless: 0.2              # 0.2% - Function-as-a-Service (emerging)
+
+# Findings generation configuration
+findings_config:
+  # Vulnerability detection tools - common enterprise security scanners
+  detection_tools:
+  - Nessus                     # Tenable's vulnerability scanner
+  - Qualys                     # Cloud-based vulnerability management
+  - OpenVAS                    # Open-source vulnerability scanner
+  - Nexpose                    # Rapid7's vulnerability scanner
+  - Tenable.io                 # Cloud-based Tenable platform
+  - Rapid7                     # InsightVM vulnerability management
+  - Acunetix                   # Web application security scanner
+  
+  # Severity distribution weights (realistic enterprise findings)
+  # Lower severity findings are more common than critical ones
+  severity_weights:
+    CRITICAL: 5                # 5% - Rare but high-impact vulnerabilities
+    HIGH: 15                   # 15% - Significant security risks
+    MEDIUM: 35                 # 35% - Moderate security concerns
+    LOW: 45                    # 45% - Minor issues and informational findings
+  
+  # Recent bias configuration for vulnerability selection
+  recent_bias:
+    enabled: true              # Enable bias towards recent vulnerabilities
+    cutoff_years: 2            # Consider vulnerabilities from last 2 years as "recent"
+    multiplier: 3.0            # 3x weight multiplier for recent vulnerabilities
+    
+    # Year weighting for vulnerability selection
+    # Higher weights mean more likely to be selected
+    year_weights:
+      2025_and_later: 0.4      # 40% weight for 2025+ (most recent)
+      2024: 0.3                # 30% weight for 2024
+      2023: 0.2                # 20% weight for 2023
+      2020_to_2022: 0.05       # 5% weight for 2020-2022
+      2015_to_2019: 0.03       # 3% weight for 2015-2019
+      before_2015: 0.02        # 2% weight for older vulnerabilities
+      malformed: 0.01          # 1% weight for malformed/unknown years
+  
+  # Default vulnerability counts per asset (realistic range)
+  vulnerability_counts:
+    min: 1                     # Minimum findings per asset
+    max: 8                     # Maximum findings per asset
+  
+  # Maximum unique vulnerabilities to load from NVD database
+  # This caps the vulnerability pool size for performance optimization
+  max_unique_vulns: 5000       # Maximum vulnerabilities to load (default: 5000)
+  
+  detection_probability: 0.7   # 70% chance a vulnerability is detected
+  false_positive_rate: 0.1     # 10% chance of false positive findings
