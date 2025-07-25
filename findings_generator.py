@@ -1,38 +1,61 @@
 import argparse
-import json
-import random
-import uuid
-import yaml
 import csv
+import json
+import logging
+import os
+import random
 import sqlite3
 import time
+import uuid
+import yaml
+from collections import Counter
 from datetime import datetime, timedelta
+from pathlib import Path
 from typing import List, Dict, Any
-import os
 
 class FindingsGenerator:
+    """Generator for synthetic vulnerability findings.
+    
+    This class generates realistic vulnerability findings for testing and simulation purposes.
+    It supports multiple input/output formats (JSON, CSV, SQL) and provides configurable
+    vulnerability detection scenarios.
+    
+    Attributes:
+        _vulnerability_cache: Class-level cache for vulnerability data
+        _cache_timestamp: Timestamp of cached vulnerability data
+    """
     _vulnerability_cache = None
     _cache_timestamp = None
     
-    def __init__(
-        self,
-        asset_file: str = '',
-        config_file: str = 'configs/generator_config.yaml',
-        num_findings: int = 10,
-        bias_recent: bool = True,
-    ):
-        self.config_file = config_file
-        self.num_findings = num_findings
-        self.bias_recent = bias_recent
-        self.config = self._load_config()
+    def __init__(self, config_file: str = "configs/generator_config.yaml"):
+        """Initialize the FindingsGenerator.
         
-        # Use config default if no asset file specified
-        self.asset_file = asset_file if asset_file else self.config.get('default_paths', {}).get('asset_output', 'data/raw/assets.json')
+        Args:
+            config_file: Path to YAML configuration file containing generator settings
+        """
+        # Configure logging
+        logging.basicConfig(
+            level=logging.INFO,
+            format='%(asctime)s - %(levelname)s - %(message)s',
+            handlers=[
+                logging.StreamHandler(),
+                logging.FileHandler('findings_generator.log', mode='a')
+            ]
+        )
         
-        self.assets = self._load_assets()
-        self.vulnerabilities = self._load_vulnerabilities()
+        self.config = self._load_config(config_file)
+        self._initialize_settings()
         
-        # Load detection tools and other config from the shared config
+    def _initialize_settings(self):
+        """Initialize all settings and load required data.
+        
+        Loads configuration for detection tools, severity weights, recent bias settings,
+        and vulnerability count ranges from the configuration file.
+        """
+        # Get default paths
+        self.default_paths = self.config.get('default_paths', {})
+        
+        # Initialize findings-specific configuration
         findings_config = self.config.get('findings_config', {})
         self.detection_tools = findings_config.get('detection_tools', [
             "Nessus", "Qualys", "OpenVAS", "Nexpose", "Tenable.io"
@@ -46,8 +69,33 @@ class FindingsGenerator:
         self.vulnerability_counts = findings_config.get('vulnerability_counts', {
             'min': 1, 'max': 8
         })
+        
+    def initialize_for_generation(self, asset_file: str = '', num_findings: int = 10, bias_recent: bool = True):
+        """Initialize generator for findings generation with specific parameters.
+        
+        Args:
+            asset_file: Path to asset file (JSON, CSV, or SQL). Uses config default if empty
+            num_findings: Number of findings to generate
+            bias_recent: Whether to bias selection toward recent vulnerabilities
+        """
+        self.num_findings = num_findings
+        self.bias_recent = bias_recent
+        
+        # Use config default if no asset file specified
+        self.asset_file = asset_file if asset_file else self.default_paths.get('asset_output', 'data/raw/assets.json')
+        
+        self.assets = self._load_assets()
+        self.vulnerabilities = self._load_vulnerabilities()
 
     def _load_assets(self) -> List[Dict[str, Any]]:
+        """Load assets from file, auto-detecting format based on extension.
+        
+        Returns:
+            List of asset dictionaries loaded from the specified file
+            
+        Raises:
+            Logs errors for file not found, permission denied, or other exceptions
+        """
         try:
             # Detect format based on file extension
             file_ext = self.asset_file.lower().split('.')[-1]
@@ -62,90 +110,209 @@ class FindingsGenerator:
                 # Default to JSON if extension is unknown
                 print(f"Unknown file extension '{file_ext}', attempting JSON format...")
                 return self._load_assets_json()
+        except FileNotFoundError:
+            logging.error(f"Asset file not found: {self.asset_file}")
+            return []
+        except PermissionError:
+            logging.error(f"Permission denied accessing asset file: {self.asset_file}")
+            return []
         except Exception as e:
-            print(f"Error loading assets: {e}")
+            logging.error(f"Unexpected error loading assets from {self.asset_file}: {e}")
             return []
     
     def _load_assets_json(self) -> List[Dict[str, Any]]:
-        """Load assets from JSON file"""
-        with open(self.asset_file, 'r') as f:
-            return json.load(f)
+        """Load assets from JSON file.
+        
+        Returns:
+            List of asset dictionaries parsed from JSON file
+            
+        Raises:
+            Logs JSONDecodeError for invalid JSON or other file reading errors
+        """
+        try:
+            with open(self.asset_file, 'r') as f:
+                return json.load(f)
+        except json.JSONDecodeError as e:
+            logging.error(f"Invalid JSON in asset file {self.asset_file}: {e}")
+            return []
+        except Exception as e:
+            logging.error(f"Error reading JSON asset file {self.asset_file}: {e}")
+            return []
     
     def _load_assets_csv(self) -> List[Dict[str, Any]]:
-        """Load assets from CSV file"""
+        """Load assets from CSV file.
+        
+        Converts CSV rows back to asset dictionary format, handling type conversions
+        for boolean fields, lists, and numeric values.
+        
+        Returns:
+            List of asset dictionaries converted from CSV rows
+            
+        Raises:
+            Logs warnings for malformed rows and errors for file reading issues
+        """
         assets = []
-        with open(self.asset_file, 'r', encoding='utf-8') as f:
-            reader = csv.DictReader(f)
-            for row in reader:
-                # Convert CSV row back to asset format
-                asset = {
-                    'uuid': row['uuid'],
-                    'domain_name': row['domain_name'],
-                    'hostname': row['hostname'],
-                    'user_accounts': row['user_accounts'].split(';') if row['user_accounts'] else [],
-                    'privileged_user_accounts': row['privileged_user_accounts'].split(';') if row['privileged_user_accounts'] else [],
-                    'type': row['type'],
-                    'internet_exposed': row['internet_exposed'].lower() == 'true',
-                    'public_ip': row['public_ip'] if row['public_ip'] else None,
-                    'internal_ip': row['internal_ip'],
-                    'open_ports': [int(p) for p in row['open_ports'].split(';')] if row['open_ports'] else [],
-                    'endpoint_security_installed': row['endpoint_security_installed'].lower() == 'true',
-                    'local_firewall_active': row['local_firewall_active'].lower() == 'true',
-                    'location': row['location']
-                }
-                assets.append(asset)
+        try:
+            with open(self.asset_file, 'r', encoding='utf-8') as f:
+                reader = csv.DictReader(f)
+                for row_num, row in enumerate(reader, start=2):  # Start at 2 to account for header
+                    try:
+                        # Convert CSV row back to asset format
+                        asset = {
+                            'uuid': row['uuid'],
+                            'domain_name': row['domain_name'],
+                            'hostname': row['hostname'],
+                            'user_accounts': row['user_accounts'].split(';') if row['user_accounts'] else [],
+                            'privileged_user_accounts': row['privileged_user_accounts'].split(';') if row['privileged_user_accounts'] else [],
+                            'type': row['type'],
+                            'internet_exposed': row['internet_exposed'].lower() == 'true',
+                            'public_ip': row['public_ip'] if row['public_ip'] else None,
+                            'internal_ip': row['internal_ip'],
+                            'open_ports': [int(p) for p in row['open_ports'].split(';')] if row['open_ports'] else [],
+                            'endpoint_security_installed': row['endpoint_security_installed'].lower() == 'true',
+                            'local_firewall_active': row['local_firewall_active'].lower() == 'true',
+                            'location': row['location']
+                        }
+                        assets.append(asset)
+                    except (KeyError, ValueError) as e:
+                        logging.warning(f"Error processing CSV row {row_num} in {self.asset_file}: {e}")
+                        continue
+        except Exception as e:
+            logging.error(f"Error reading CSV asset file {self.asset_file}: {e}")
+            return []
         return assets
     
     def _load_assets_sql(self) -> List[Dict[str, Any]]:
-        """Load assets from SQL database file"""
+        """Load assets from SQL database or script file.
+        
+        Supports both SQLite database files (.db, .sqlite) and SQL script files (.sql)
+        containing INSERT statements.
+        
+        Returns:
+            List of asset dictionaries loaded from SQL source
+            
+        Raises:
+            Logs database connection errors, SQL execution errors, and parsing errors
+        """
         assets = []
         
         # Check if it's a SQLite database file
         if self.asset_file.endswith('.db') or self.asset_file.endswith('.sqlite'):
-            conn = sqlite3.connect(self.asset_file)
-            conn.row_factory = sqlite3.Row  # Enable column access by name
-            cursor = conn.cursor()
-            
             try:
-                cursor.execute("SELECT * FROM assets")
-                rows = cursor.fetchall()
+                conn = sqlite3.connect(self.asset_file)
+                conn.row_factory = sqlite3.Row  # Enable column access by name
+                cursor = conn.cursor()
                 
-                for row in rows:
-                    asset = {
-                        'uuid': row['uuid'],
-                        'domain_name': row['domain_name'],
-                        'hostname': row['hostname'],
-                        'user_accounts': row['user_accounts'].split(';') if row['user_accounts'] else [],
-                        'privileged_user_accounts': row['privileged_user_accounts'].split(';') if row['privileged_user_accounts'] else [],
-                        'type': row['type'],
-                        'internet_exposed': bool(row['internet_exposed']),
-                        'public_ip': row['public_ip'] if row['public_ip'] != 'NULL' else None,
-                        'internal_ip': row['internal_ip'],
-                        'open_ports': [int(p) for p in row['open_ports'].split(';')] if row['open_ports'] else [],
-                        'endpoint_security_installed': bool(row['endpoint_security_installed']),
-                        'local_firewall_active': bool(row['local_firewall_active']),
-                        'location': row['location']
-                    }
-                    assets.append(asset)
-            finally:
-                conn.close()
+                try:
+                    cursor.execute("SELECT * FROM assets")
+                    rows = cursor.fetchall()
+                    
+                    for i, row in enumerate(rows):
+                        try:
+                            asset = {
+                                'uuid': row['uuid'],
+                                'domain_name': row['domain_name'],
+                                'hostname': row['hostname'],
+                                'user_accounts': row['user_accounts'].split(';') if row['user_accounts'] else [],
+                                'privileged_user_accounts': row['privileged_user_accounts'].split(';') if row['privileged_user_accounts'] else [],
+                                'type': row['type'],
+                                'internet_exposed': bool(row['internet_exposed']),
+                                'public_ip': row['public_ip'] if row['public_ip'] != 'NULL' else None,
+                                'internal_ip': row['internal_ip'],
+                                'open_ports': [int(p) for p in row['open_ports'].split(';')] if row['open_ports'] else [],
+                                'endpoint_security_installed': bool(row['endpoint_security_installed']),
+                                'local_firewall_active': bool(row['local_firewall_active']),
+                                'location': row['location']
+                            }
+                            assets.append(asset)
+                        except (KeyError, ValueError, TypeError) as e:
+                            logging.warning(f"Error processing SQL row {i+1} in {self.asset_file}: {e}")
+                            continue
+                except sqlite3.Error as e:
+                    logging.error(f"Database error reading assets from {self.asset_file}: {e}")
+                    return []
+                finally:
+                    conn.close()
+            except sqlite3.Error as e:
+                logging.error(f"Error connecting to SQLite database {self.asset_file}: {e}")
+                return []
         else:
-            # Assume it's a SQL script file - this is more complex and would require
-            # parsing SQL INSERT statements. For now, raise an error.
-            raise ValueError("SQL script files (.sql) are not supported for input. Use SQLite database files (.db, .sqlite) instead.")
+            # Assume it's a SQL script file
+            import re
+            try:
+                with open(self.asset_file, 'r', encoding='utf-8') as f:
+                    content = f.read()
+                    
+                # Parse INSERT statements
+                insert_pattern = r"INSERT INTO assets \([^)]+\) VALUES \(([^)]+)\);"
+                matches = re.findall(insert_pattern, content)
+                
+                for i, match in enumerate(matches):
+                    try:
+                        # Parse values from SQL INSERT
+                        values = [v.strip().strip("'") for v in match.split(',')]
+                        if len(values) >= 13:  # Ensure we have all required fields
+                            asset = {
+                                'uuid': values[0],
+                                'domain_name': values[1],
+                                'hostname': values[2],
+                                'user_accounts': values[3].split(';') if values[3] else [],
+                                'privileged_user_accounts': values[4].split(';') if values[4] else [],
+                                'type': values[5],
+                                'internet_exposed': values[6].lower() == 'true',
+                                'public_ip': values[7] if values[7] != 'NULL' else None,
+                                'internal_ip': values[8],
+                                'open_ports': [int(p) for p in values[9].split(';')] if values[9] else [],
+                                'endpoint_security_installed': values[10].lower() == 'true',
+                                'local_firewall_active': values[11].lower() == 'true',
+                                'location': values[12]
+                            }
+                            assets.append(asset)
+                        else:
+                            logging.warning(f"Insufficient fields in SQL INSERT statement {i+1} in {self.asset_file}")
+                    except (ValueError, IndexError) as e:
+                        logging.warning(f"Error parsing SQL INSERT statement {i+1} in {self.asset_file}: {e}")
+                        continue
+            except Exception as e:
+                logging.error(f"Error reading SQL script file {self.asset_file}: {e}")
+                return []
         
         return assets
     
-    def _load_config(self) -> Dict[str, Any]:
+    def _load_config(self, config_file: str) -> Dict[str, Any]:
+        """Load configuration from YAML file.
+        
+        Args:
+            config_file: Path to YAML configuration file
+            
+        Returns:
+            Dictionary containing configuration settings, empty dict if file not found
+            
+        Raises:
+            Logs warnings for missing files and errors for parsing issues
+        """
         try:
-            with open(self.config_file, 'r') as f:
+            with open(config_file, 'r') as f:
                 return yaml.safe_load(f)
+        except FileNotFoundError:
+            print(f"Warning: Config file {config_file} not found. Using defaults.")
+            return {}
         except Exception as e:
             print(f"Error loading config: {e}")
             return {}
     
     def _load_vulnerabilities(self) -> List[Dict[str, Any]]:
-        """Load vulnerabilities from data sources using caching and optimized approach"""
+        """Load vulnerabilities from data sources using caching and optimized approach.
+        
+        Uses class-level caching to avoid reloading vulnerability data within 1 hour.
+        Falls back to sample CVEs if NVD data is unavailable.
+        
+        Returns:
+            List of vulnerability dictionaries with id, severity, base_score, description, year
+            
+        Raises:
+            Logs errors for data loading issues and uses fallback data
+        """
         
         # Check if we have cached vulnerabilities (valid for 1 hour)
         current_time = time.time()
@@ -186,7 +353,17 @@ class FindingsGenerator:
             return fallback_vulns
     
     def _stream_nvd_vulnerabilities(self, nvd_base: str) -> List[Dict[str, Any]]:
-        """Stream NVD vulnerabilities without loading entire dataset into memory"""
+        """Stream NVD vulnerabilities without loading entire dataset into memory.
+        
+        Processes vulnerabilities year by year, applying recent bias if configured.
+        Limits total vulnerabilities loaded for performance.
+        
+        Args:
+            nvd_base: Base directory path containing NVD data organized by year
+            
+        Returns:
+            List of vulnerability dictionaries up to configured maximum
+        """
         vulnerabilities = []
         
         if not os.path.exists(nvd_base):
@@ -234,7 +411,17 @@ class FindingsGenerator:
         return vulnerabilities[:target_total]
     
     def _calculate_year_weights(self, year_dirs: List[str]) -> Dict[str, float]:
-        """Calculate weights for each year based on recency"""
+        """Calculate weights for each year based on recency.
+        
+        Assigns higher weights to more recent years for biased vulnerability selection.
+        Uses configuration settings or defaults for weight distribution.
+        
+        Args:
+            year_dirs: List of year directory names (e.g., ['CVE-2023', 'CVE-2022'])
+            
+        Returns:
+            Dictionary mapping year directories to their selection weights
+        """
         year_weights = {}
         
         # Get year weights from config
@@ -277,7 +464,18 @@ class FindingsGenerator:
         return year_weights
     
     def _distribute_targets_by_weight(self, year_weights: Dict[str, float], target_total: int) -> Dict[str, int]:
-        """Distribute target counts across years based on weights"""
+        """Distribute target counts across years based on weights.
+        
+        Converts relative weights to absolute target counts for each year,
+        ensuring at least 1 vulnerability per year if possible.
+        
+        Args:
+            year_weights: Dictionary mapping year directories to selection weights
+            target_total: Total number of vulnerabilities to distribute
+            
+        Returns:
+            Dictionary mapping year directories to target vulnerability counts
+        """
         total_weight = sum(year_weights.values())
         target_per_year = {}
         
@@ -291,7 +489,19 @@ class FindingsGenerator:
         return target_per_year
     
     def _stream_year_vulnerabilities(self, nvd_base: str, year_dir: str, target_count: int) -> List[Dict[str, Any]]:
-        """Stream vulnerabilities from a specific year directory"""
+        """Stream vulnerabilities from a specific year directory.
+        
+        Processes JSON files within a year directory to extract vulnerability data,
+        randomly sampling up to the target count.
+        
+        Args:
+            nvd_base: Base directory path containing NVD data
+            year_dir: Specific year directory name (e.g., 'CVE-2023')
+            target_count: Maximum number of vulnerabilities to extract from this year
+            
+        Returns:
+            List of vulnerability dictionaries from the specified year
+        """
         year_vulns = []
         year_path = os.path.join(nvd_base, year_dir)
         
@@ -400,8 +610,17 @@ class FindingsGenerator:
                         'year': year
                     })
                     
+                except FileNotFoundError:
+                    logging.warning(f"Vulnerability file not found: {nvd_path}")
+                    continue
+                except json.JSONDecodeError as e:
+                    logging.warning(f"Invalid JSON in vulnerability file {nvd_path}: {e}")
+                    continue
+                except KeyError as e:
+                    logging.warning(f"Missing required field in vulnerability file {nvd_path}: {e}")
+                    continue
                 except Exception as e:
-                    # Skip malformed files
+                    logging.error(f"Unexpected error processing vulnerability file {nvd_path}: {e}")
                     continue
         
         return year_vulns
@@ -412,6 +631,22 @@ class FindingsGenerator:
                          num_findings: int = 0,
                          detection_probability: float = 0.7,
                          false_positive_rate: float = 0.1) -> List[Dict[str, Any]]:
+        """Generate synthetic vulnerability findings for loaded assets.
+        
+        Creates realistic findings by randomly selecting assets and vulnerabilities,
+        applying detection probability and false positive rates.
+        
+        Args:
+            num_findings: Number of findings to generate (0 uses instance default)
+            detection_probability: Probability of detecting a real vulnerability (0.0-1.0)
+            false_positive_rate: Rate of false positive findings (0.0-1.0)
+            
+        Returns:
+            List of finding dictionaries with asset, vulnerability, and detection metadata
+            
+        Raises:
+            ValueError: If no assets are loaded
+        """
         if num_findings == 0:
             num_findings = self.num_findings
             
@@ -467,8 +702,19 @@ class FindingsGenerator:
 
         return findings
 
-    def save_findings(self, findings: List[Dict[str, Any]], output_file: str = ''):
-        """Save findings to JSON file"""
+    def save_findings(self, findings: List[Dict[str, Any]], output_file: str = '', output_format: str = 'json'):
+        """Save findings to file in specified format.
+        
+        Supports JSON, CSV, and SQL output formats with automatic directory creation.
+        
+        Args:
+            findings: List of finding dictionaries to save
+            output_file: Output file path (uses config default if empty)
+            output_format: Output format ('json', 'csv', or 'sql')
+            
+        Raises:
+            ValueError: If output format is not supported
+        """
         # Use config default if no output file specified
         if not output_file:
             output_file = self.config.get('default_paths', {}).get('findings_output', 'data/raw/findings.json')
@@ -478,12 +724,117 @@ class FindingsGenerator:
         if output_dir:  # Only create directory if path is not empty
             os.makedirs(output_dir, exist_ok=True)
         
+        if output_format.lower() == "json":
+            self._save_as_json(findings, output_file)
+        elif output_format.lower() == "csv":
+            self._save_as_csv(findings, output_file)
+        elif output_format.lower() == "sql":
+            self._save_as_sql(findings, output_file)
+        else:
+            raise ValueError(f"Unsupported output format: {output_format}")
+        
+        print(f"Generated {len(findings)} findings and saved to {output_file} ({output_format.upper()} format)")
+    
+    def _save_as_json(self, findings: List[Dict[str, Any]], output_file: str):
+        """Save findings as JSON format.
+        
+        Args:
+            findings: List of finding dictionaries to save
+            output_file: Path to output JSON file
+        """
         with open(output_file, 'w') as f:
             json.dump(findings, f, indent=2)
+    
+    def _save_as_csv(self, findings: List[Dict[str, Any]], output_file: str):
+        """Save findings as CSV format.
         
-        print(f"Generated {len(findings)} findings and saved to {output_file}")
+        Flattens nested finding data and sanitizes text fields for CSV compatibility.
+        
+        Args:
+            findings: List of finding dictionaries to save
+            output_file: Path to output CSV file
+        """
+        if not findings:
+            return
+        
+        # Flatten the data for CSV export
+        flattened_findings = []
+        for finding in findings:
+            flattened = {
+                'finding_id': finding['finding_id'],
+                'asset_uuid': finding['asset_uuid'],
+                'timestamp': finding['timestamp'],
+                'detection_tool': finding['detection_tool'],
+                'is_false_positive': finding['is_false_positive'],
+                'cve_id': finding.get('cve_id', ''),
+                'severity': finding.get('severity', ''),
+                'base_score': finding.get('base_score', 0.0),
+                'description': finding.get('description', '').replace('\n', ' ').replace('\r', '')
+            }
+            flattened_findings.append(flattened)
+        
+        with open(output_file, 'w', newline='', encoding='utf-8') as f:
+            writer = csv.DictWriter(f, fieldnames=flattened_findings[0].keys())
+            writer.writeheader()
+            writer.writerows(flattened_findings)
+    
+    def _save_as_sql(self, findings: List[Dict[str, Any]], output_file: str):
+        """Save findings as SQL INSERT statements.
+        
+        Generates CREATE TABLE statement followed by INSERT statements for all findings.
+        
+        Args:
+            findings: List of finding dictionaries to save
+            output_file: Path to output SQL file
+        """
+        if not findings:
+            return
+        
+        with open(output_file, 'w', encoding='utf-8') as f:
+            # Write table creation statement
+            f.write("-- Vulnerability findings table\n")
+            f.write("CREATE TABLE IF NOT EXISTS findings (\n")
+            f.write("    finding_id VARCHAR(36) PRIMARY KEY,\n")
+            f.write("    asset_uuid VARCHAR(36),\n")
+            f.write("    timestamp DATETIME,\n")
+            f.write("    detection_tool VARCHAR(100),\n")
+            f.write("    is_false_positive BOOLEAN,\n")
+            f.write("    cve_id VARCHAR(20),\n")
+            f.write("    severity VARCHAR(20),\n")
+            f.write("    base_score DECIMAL(3,1),\n")
+            f.write("    description TEXT\n")
+            f.write(");\n\n")
+            
+            # Write INSERT statements
+            f.write("-- Findings data\n")
+            for finding in findings:
+                description = finding.get('description', '').replace("'", "''")
+                
+                f.write(f"INSERT INTO findings VALUES (\n")
+                f.write(f"    '{finding['finding_id']}',\n")
+                f.write(f"    '{finding['asset_uuid']}',\n")
+                f.write(f"    '{finding['timestamp']}',\n")
+                f.write(f"    '{finding['detection_tool']}',\n")
+                f.write(f"    {str(finding['is_false_positive']).lower()},\n")
+                f.write(f"    '{finding.get('cve_id', '')}',\n")
+                f.write(f"    '{finding.get('severity', '')}',\n")
+                f.write(f"    {finding.get('base_score', 0.0)},\n")
+                f.write(f"    '{description}'\n")
+                f.write(");\n")
 
 def main():
+    """Main entry point for the findings generator CLI.
+    
+    Parses command line arguments and orchestrates the findings generation process.
+    Supports configurable output formats, input sources, and generation parameters.
+    
+    Command line options:
+        --count: Number of findings to generate
+        --no-bias-recent: Disable bias towards recent CVEs
+        --output: Output file path
+        --output-format: Output format (json, csv, sql)
+        --input-file: Input asset file path
+    """
     parser = argparse.ArgumentParser(description='Generate vulnerability findings')
     parser.add_argument('--count', type=int, default=10, 
                        help='Number of findings to generate (default: 10)')
@@ -491,21 +842,38 @@ def main():
                        help='Disable bias towards recent CVEs')
     parser.add_argument('--output', type=str, default='',
                        help='Output file path (uses config default if not specified)')
+    parser.add_argument('--output-format', type=str, choices=['json', 'csv', 'sql'], default='json',
+                       help='Output format (default: json)')
     parser.add_argument('--input-file', type=str, default='',
                        help='Input asset file path (JSON, CSV, or SQLite database). Supports .json, .csv, .db, .sqlite extensions')
     args = parser.parse_args()
     
-    generator = FindingsGenerator(
+    generator = FindingsGenerator()
+    generator.initialize_for_generation(
         asset_file=args.input_file,
         num_findings=args.count,
         bias_recent=not args.no_bias_recent
     )
+    
+    # Use config default if no output specified, but adjust extension based on format
+    if args.output:
+        output_file = args.output
+    else:
+        default_output = generator.config.get('default_paths', {}).get('findings_output', 'data/raw/findings.json')
+        # Change extension based on format
+        if args.output_format == 'csv':
+            output_file = default_output.replace('.json', '.csv')
+        elif args.output_format == 'sql':
+            output_file = default_output.replace('.json', '.sql')
+        else:
+            output_file = default_output
+    
     findings = generator.generate_findings(
         num_findings=args.count,
         detection_probability=0.7,
         false_positive_rate=0.1
     )
-    generator.save_findings(findings, args.output)
+    generator.save_findings(findings, output_file, args.output_format)
     
     # Statistics
     print("\n" + "=" * 60)

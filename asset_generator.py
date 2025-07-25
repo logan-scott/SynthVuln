@@ -1,16 +1,65 @@
 import argparse
-import json
-import uuid
-import random
-import yaml
 import csv
-from typing import List, Dict, Any
-from pathlib import Path
+import json
+import logging
+import random
+import uuid
+import yaml
 from collections import Counter
+from pathlib import Path
+from typing import List, Dict, Any
 
 class AssetGenerator:
+    """
+    A generator for creating synthetic asset inventory data.
+    
+    This class generates realistic asset data including various asset types (Desktop, Laptop, Server),
+    locations, network configurations, and security settings. It supports multiple output formats
+    including JSON, CSV, and SQL.
+    
+    Attributes:
+        config (Dict[str, Any]): Configuration loaded from YAML file
+        asset_types (List[str]): Available asset types
+        locations (List[str]): Available asset locations
+        common_ports (List[int]): Common network ports
+        asset_location_mapping (Dict[str, List[str]]): Valid locations per asset type
+        asset_port_mapping (Dict[str, List[int]]): Valid ports per asset type
+        asset_internet_exposure_base (Dict[str, float]): Base internet exposure probability per asset type
+        location_exposure_multiplier (Dict[str, float]): Location-based exposure multipliers
+        asset_type_distribution (Dict[str, float]): Asset type distribution weights
+        default_paths (Dict[str, str]): Default file paths from configuration
+    """
+    
     def __init__(self, config_file: str = "configs/generator_config.yaml"):
+        """
+        Initialize the AssetGenerator with configuration and logging.
+        
+        Args:
+            config_file (str): Path to the YAML configuration file
+        """
+        # Configure logging
+        logging.basicConfig(
+            level=logging.INFO,
+            format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+            handlers=[
+                logging.StreamHandler(),
+                logging.FileHandler('asset_generator.log')
+            ]
+        )
+        self.logger = logging.getLogger(__name__)
+        
+        # Load configuration and initialize settings
         self.config = self._load_config(config_file)
+        self._initialize_settings()
+    
+    def _initialize_settings(self):
+        """
+        Initialize generator settings from configuration.
+        
+        This method extracts and sets up all configuration parameters needed
+        for asset generation, including asset types, locations, port mappings,
+        and distribution weights.
+        """
         self.asset_types = self.config.get('asset_types', [])
         self.locations = self.config.get('locations', [])
         self.common_ports = self.config.get('common_ports', [])
@@ -24,19 +73,48 @@ class AssetGenerator:
         
         # Get default paths
         self.default_paths = self.config.get('default_paths', {})
+        
+        self.logger.info(f"Initialized AssetGenerator with {len(self.asset_types)} asset types and {len(self.locations)} locations")
     
     def _load_config(self, config_file: str) -> Dict[str, Any]:
-        """Load configuration from YAML file"""
+        """
+        Load configuration from YAML file with comprehensive error handling.
+        
+        Args:
+            config_file (str): Path to the YAML configuration file
+            
+        Returns:
+            Dict[str, Any]: Configuration dictionary
+            
+        Raises:
+            Uses fallback configuration if file cannot be loaded
+        """
         try:
-            with open(config_file, 'r') as f:
-                return yaml.safe_load(f)
+            with open(config_file, 'r', encoding='utf-8') as f:
+                config = yaml.safe_load(f)
+                self.logger.info(f"Successfully loaded configuration from {config_file}")
+                return config
+        except FileNotFoundError:
+            self.logger.warning(f"Configuration file {config_file} not found, using fallback configuration")
+            return self._get_fallback_config()
+        except PermissionError:
+            self.logger.error(f"Permission denied accessing {config_file}, using fallback configuration")
+            return self._get_fallback_config()
+        except yaml.YAMLError as e:
+            self.logger.error(f"Invalid YAML in {config_file}: {e}, using fallback configuration")
+            return self._get_fallback_config()
         except Exception as e:
-            print(f"Error loading config file {config_file}: {e}")
-            print("Using fallback configuration...")
+            self.logger.error(f"Unexpected error loading config file {config_file}: {e}, using fallback configuration")
             return self._get_fallback_config()
     
     def _get_fallback_config(self) -> Dict[str, Any]:
-        """Provide fallback configuration if config file cannot be loaded"""
+        """
+        Provide fallback configuration if config file cannot be loaded.
+        
+        Returns:
+            Dict[str, Any]: Default configuration with basic asset types,
+                          locations, ports, and distribution settings
+        """
         return {
             'asset_types': ["Desktop", "Laptop", "Server"],
             'locations': ["Remote", "Internal", "Data center", "Cloud"],
@@ -73,6 +151,17 @@ class AssetGenerator:
         }
 
     def generate_user_accounts(self, is_privileged: bool = False, count: int = 0) -> List[str]:
+        """
+        Generate a list of user account names.
+        
+        Args:
+            is_privileged (bool): Whether to generate privileged (admin) accounts
+            count (int): Number of accounts to generate. If 0, uses random count
+                        (1-5 for privileged, 2-10 for regular users)
+                        
+        Returns:
+            List[str]: List of generated user account names
+        """
         if count == 0:
             count = random.randint(1, 5) if is_privileged else random.randint(2, 10)
         
@@ -80,6 +169,29 @@ class AssetGenerator:
         return [f"{prefix}{i}" for i in range(1, count + 1)]
 
     def generate_single_asset(self) -> Dict[str, Any]:
+        """
+        Generate a single synthetic asset with realistic properties.
+        
+        This method creates an asset with properties based on configuration weights
+        and realistic relationships between asset type, location, and security settings.
+        Internet exposure probability is calculated based on asset type and location.
+        
+        Returns:
+            Dict[str, Any]: Asset dictionary containing:
+                - uuid: Unique identifier
+                - domain_name: Domain name
+                - hostname: Asset hostname
+                - user_accounts: List of regular user accounts
+                - privileged_user_accounts: List of privileged user accounts
+                - type: Asset type (Desktop, Laptop, Server, etc.)
+                - internet_exposed: Boolean indicating internet exposure
+                - public_ip: Public IP address (if internet exposed)
+                - internal_ip: Internal IP address
+                - open_ports: List of open network ports
+                - endpoint_security_installed: Boolean for endpoint security
+                - local_firewall_active: Boolean for firewall status
+                - location: Asset location
+        """
         # Select asset type based on realistic distribution weights
         asset_types = list(self.asset_type_distribution.keys())
         weights = list(self.asset_type_distribution.values())
@@ -118,107 +230,238 @@ class AssetGenerator:
         return asset
 
     def generate_assets(self, count: int, output_file: str = "", output_format: str = "json") -> List[Dict[str, Any]]:
+        """
+        Generate multiple synthetic assets and optionally save to file.
+        
+        Args:
+            count (int): Number of assets to generate
+            output_file (str): Optional output file path. If empty, assets are not saved
+            output_format (str): Output format - 'json', 'csv', or 'sql'
+            
+        Returns:
+            List[Dict[str, Any]]: List of generated asset dictionaries
+            
+        Raises:
+            ValueError: If unsupported output format is specified
+            OSError: If file operations fail
+        """
+        self.logger.info(f"Generating {count} assets")
         assets = [self.generate_single_asset() for _ in range(count)]
         
         if output_file:
-            output_path = Path(output_file)
-            output_path.parent.mkdir(parents=True, exist_ok=True)
-            
-            if output_format.lower() == "json":
-                self._save_as_json(assets, output_file)
-            elif output_format.lower() == "csv":
-                self._save_as_csv(assets, output_file)
-            elif output_format.lower() == "sql":
-                self._save_as_sql(assets, output_file)
-            else:
-                raise ValueError(f"Unsupported output format: {output_format}")
+            try:
+                output_path = Path(output_file)
+                output_path.parent.mkdir(parents=True, exist_ok=True)
+                
+                if output_format.lower() == "json":
+                    self._save_as_json(assets, output_file)
+                elif output_format.lower() == "csv":
+                    self._save_as_csv(assets, output_file)
+                elif output_format.lower() == "sql":
+                    self._save_as_sql(assets, output_file)
+                else:
+                    raise ValueError(f"Unsupported output format: {output_format}")
+                    
+                self.logger.info(f"Successfully saved {len(assets)} assets to {output_file} in {output_format.upper()} format")
+            except PermissionError:
+                self.logger.error(f"Permission denied writing to {output_file}")
+                raise
+            except OSError as e:
+                self.logger.error(f"File operation failed for {output_file}: {e}")
+                raise
+            except Exception as e:
+                self.logger.error(f"Unexpected error saving assets to {output_file}: {e}")
+                raise
         
         return assets
     
     def _save_as_json(self, assets: List[Dict[str, Any]], output_file: str):
-        """Save assets as JSON format"""
-        with open(output_file, 'w') as f:
-            json.dump(assets, f, indent=2)
+        """
+        Save assets in JSON format.
+        
+        Args:
+            assets (List[Dict[str, Any]]): List of asset dictionaries to save
+            output_file (str): Path to output JSON file
+            
+        Raises:
+            OSError: If file writing fails
+            json.JSONEncodeError: If assets cannot be serialized to JSON
+        """
+        try:
+            with open(output_file, 'w', encoding='utf-8') as f:
+                json.dump(assets, f, indent=2, ensure_ascii=False)
+        except json.JSONEncodeError as e:
+            self.logger.error(f"Failed to encode assets as JSON: {e}")
+            raise
+        except OSError as e:
+            self.logger.error(f"Failed to write JSON file {output_file}: {e}")
+            raise
     
     def _save_as_csv(self, assets: List[Dict[str, Any]], output_file: str):
-        """Save assets as CSV format"""
+        """
+        Save assets in CSV format with flattened data structure.
+        
+        This method flattens complex fields (lists) into semicolon-separated strings
+        to make them suitable for CSV format.
+        
+        Args:
+            assets (List[Dict[str, Any]]): List of asset dictionaries to save
+            output_file (str): Path to output CSV file
+            
+        Raises:
+            OSError: If file writing fails
+            KeyError: If required asset fields are missing
+        """
         if not assets:
+            self.logger.warning("No assets to save to CSV")
             return
         
-        # Flatten the data for CSV export
-        flattened_assets = []
-        for asset in assets:
-            flattened = {
-                'uuid': asset['uuid'],
-                'domain_name': asset['domain_name'],
-                'hostname': asset['hostname'],
-                'user_accounts': ';'.join(asset['user_accounts']),
-                'privileged_user_accounts': ';'.join(asset['privileged_user_accounts']),
-                'type': asset['type'],
-                'internet_exposed': asset['internet_exposed'],
-                'public_ip': asset['public_ip'] or '',
-                'internal_ip': asset['internal_ip'],
-                'open_ports': ';'.join(map(str, asset['open_ports'])),
-                'endpoint_security_installed': asset['endpoint_security_installed'],
-                'local_firewall_active': asset['local_firewall_active'],
-                'location': asset['location']
-            }
-            flattened_assets.append(flattened)
-        
-        with open(output_file, 'w', newline='', encoding='utf-8') as f:
-            writer = csv.DictWriter(f, fieldnames=flattened_assets[0].keys())
-            writer.writeheader()
-            writer.writerows(flattened_assets)
+        try:
+            # Flatten the data for CSV export
+            flattened_assets = []
+            for i, asset in enumerate(assets):
+                try:
+                    flattened = {
+                        'uuid': asset['uuid'],
+                        'domain_name': asset['domain_name'],
+                        'hostname': asset['hostname'],
+                        'user_accounts': ';'.join(asset['user_accounts']),
+                        'privileged_user_accounts': ';'.join(asset['privileged_user_accounts']),
+                        'type': asset['type'],
+                        'internet_exposed': asset['internet_exposed'],
+                        'public_ip': asset['public_ip'] or '',
+                        'internal_ip': asset['internal_ip'],
+                        'open_ports': ';'.join(map(str, asset['open_ports'])),
+                        'endpoint_security_installed': asset['endpoint_security_installed'],
+                        'local_firewall_active': asset['local_firewall_active'],
+                        'location': asset['location']
+                    }
+                    flattened_assets.append(flattened)
+                except KeyError as e:
+                    self.logger.warning(f"Asset {i} missing required field {e}, skipping")
+                    continue
+                except (TypeError, ValueError) as e:
+                    self.logger.warning(f"Error processing asset {i}: {e}, skipping")
+                    continue
+            
+            if not flattened_assets:
+                self.logger.error("No valid assets to write to CSV")
+                return
+            
+            with open(output_file, 'w', newline='', encoding='utf-8') as f:
+                writer = csv.DictWriter(f, fieldnames=flattened_assets[0].keys())
+                writer.writeheader()
+                writer.writerows(flattened_assets)
+                
+        except OSError as e:
+            self.logger.error(f"Failed to write CSV file {output_file}: {e}")
+            raise
+        except Exception as e:
+            self.logger.error(f"Unexpected error saving CSV file {output_file}: {e}")
+            raise
     
     def _save_as_sql(self, assets: List[Dict[str, Any]], output_file: str):
-        """Save assets as SQL INSERT statements"""
+        """
+        Save assets as SQL CREATE TABLE and INSERT statements.
+        
+        This method generates a complete SQL script with table creation
+        and INSERT statements for all assets. String values are properly
+        escaped to prevent SQL injection.
+        
+        Args:
+            assets (List[Dict[str, Any]]): List of asset dictionaries to save
+            output_file (str): Path to output SQL file
+            
+        Raises:
+            OSError: If file writing fails
+            KeyError: If required asset fields are missing
+        """
         if not assets:
+            self.logger.warning("No assets to save to SQL")
             return
         
-        with open(output_file, 'w', encoding='utf-8') as f:
-            # Write table creation statement
-            f.write("-- Asset inventory table\n")
-            f.write("CREATE TABLE IF NOT EXISTS assets (\n")
-            f.write("    uuid VARCHAR(36) PRIMARY KEY,\n")
-            f.write("    domain_name VARCHAR(255),\n")
-            f.write("    hostname VARCHAR(255),\n")
-            f.write("    user_accounts TEXT,\n")
-            f.write("    privileged_user_accounts TEXT,\n")
-            f.write("    type VARCHAR(100),\n")
-            f.write("    internet_exposed BOOLEAN,\n")
-            f.write("    public_ip VARCHAR(15),\n")
-            f.write("    internal_ip VARCHAR(15),\n")
-            f.write("    open_ports TEXT,\n")
-            f.write("    endpoint_security_installed BOOLEAN,\n")
-            f.write("    local_firewall_active BOOLEAN,\n")
-            f.write("    location VARCHAR(100)\n")
-            f.write(");\n\n")
-            
-            # Write INSERT statements
-            f.write("-- Asset data\n")
-            for asset in assets:
-                user_accounts = ';'.join(asset['user_accounts']).replace("'", "''")
-                privileged_accounts = ';'.join(asset['privileged_user_accounts']).replace("'", "''")
-                open_ports = ';'.join(map(str, asset['open_ports']))
-                public_ip = asset['public_ip'] or 'NULL'
+        try:
+            with open(output_file, 'w', encoding='utf-8') as f:
+                # Write table creation statement
+                f.write("-- Asset inventory table\n")
+                f.write("CREATE TABLE IF NOT EXISTS assets (\n")
+                f.write("    uuid VARCHAR(36) PRIMARY KEY,\n")
+                f.write("    domain_name VARCHAR(255),\n")
+                f.write("    hostname VARCHAR(255),\n")
+                f.write("    user_accounts TEXT,\n")
+                f.write("    privileged_user_accounts TEXT,\n")
+                f.write("    type VARCHAR(100),\n")
+                f.write("    internet_exposed BOOLEAN,\n")
+                f.write("    public_ip VARCHAR(15),\n")
+                f.write("    internal_ip VARCHAR(15),\n")
+                f.write("    open_ports TEXT,\n")
+                f.write("    endpoint_security_installed BOOLEAN,\n")
+                f.write("    local_firewall_active BOOLEAN,\n")
+                f.write("    location VARCHAR(100)\n")
+                f.write(");\n\n")
                 
-                f.write(f"INSERT INTO assets VALUES (\n")
-                f.write(f"    '{asset['uuid']}',\n")
-                f.write(f"    '{asset['domain_name']}',\n")
-                f.write(f"    '{asset['hostname']}',\n")
-                f.write(f"    '{user_accounts}',\n")
-                f.write(f"    '{privileged_accounts}',\n")
-                f.write(f"    '{asset['type']}',\n")
-                f.write(f"    {str(asset['internet_exposed']).lower()},\n")
-                f.write(f"    {'NULL' if public_ip == 'NULL' else f"'{public_ip}'"},\n")
-                f.write(f"    '{asset['internal_ip']}',\n")
-                f.write(f"    '{open_ports}',\n")
-                f.write(f"    {str(asset['endpoint_security_installed']).lower()},\n")
-                f.write(f"    {str(asset['local_firewall_active']).lower()},\n")
-                f.write(f"    '{asset['location']}'\n")
-                f.write(");\n")
+                # Write INSERT statements
+                f.write("-- Asset data\n")
+                for i, asset in enumerate(assets):
+                    try:
+                        user_accounts = ';'.join(asset['user_accounts']).replace("'", "''")
+                        privileged_accounts = ';'.join(asset['privileged_user_accounts']).replace("'", "''")
+                        open_ports = ';'.join(map(str, asset['open_ports']))
+                        public_ip = asset['public_ip'] or 'NULL'
+                        
+                        # Escape single quotes in string fields
+                        domain_name = str(asset['domain_name']).replace("'", "''")
+                        hostname = str(asset['hostname']).replace("'", "''")
+                        asset_type = str(asset['type']).replace("'", "''")
+                        location = str(asset['location']).replace("'", "''")
+                        internal_ip = str(asset['internal_ip']).replace("'", "''")
+                        
+                        f.write(f"INSERT INTO assets VALUES (\n")
+                        f.write(f"    '{asset['uuid']}',\n")
+                        f.write(f"    '{domain_name}',\n")
+                        f.write(f"    '{hostname}',\n")
+                        f.write(f"    '{user_accounts}',\n")
+                        f.write(f"    '{privileged_accounts}',\n")
+                        f.write(f"    '{asset_type}',\n")
+                        f.write(f"    {str(asset['internet_exposed']).lower()},\n")
+                        f.write(f"    {'NULL' if public_ip == 'NULL' else f"'{public_ip}'"},\n")
+                        f.write(f"    '{internal_ip}',\n")
+                        f.write(f"    '{open_ports}',\n")
+                        f.write(f"    {str(asset['endpoint_security_installed']).lower()},\n")
+                        f.write(f"    {str(asset['local_firewall_active']).lower()},\n")
+                        f.write(f"    '{location}'\n")
+                        f.write(");\n")
+                    except KeyError as e:
+                        self.logger.warning(f"Asset {i} missing required field {e}, skipping")
+                        continue
+                    except (TypeError, ValueError) as e:
+                        self.logger.warning(f"Error processing asset {i} for SQL: {e}, skipping")
+                        continue
+                        
+        except OSError as e:
+            self.logger.error(f"Failed to write SQL file {output_file}: {e}")
+            raise
+        except Exception as e:
+            self.logger.error(f"Unexpected error saving SQL file {output_file}: {e}")
+            raise
 
 def main():
+    """
+    Command-line interface for the AssetGenerator.
+    
+    This function provides a CLI for generating synthetic asset inventory data
+    with configurable count, output file, and format options. It also displays
+    comprehensive statistics about the generated assets including type distribution,
+    location distribution, internet exposure rates, security features, and port statistics.
+    
+    Command-line Arguments:
+        --count: Number of assets to generate (default: 10)
+        --output: Output file path (optional, uses config default if not specified)
+        --output-format: Output format - json, csv, or sql (default: json)
+    
+    The function automatically adjusts file extensions based on the selected format
+    and provides detailed generation statistics upon completion.
+    """
     parser = argparse.ArgumentParser(description='Generate synthetic asset inventory')
     parser.add_argument('--count', type=int, default=10, help='Number of assets to generate')
     parser.add_argument('--output', type=str, default='', 
