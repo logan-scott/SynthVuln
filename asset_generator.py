@@ -1,13 +1,12 @@
 import argparse
 import csv
 import json
-import logging
 import random
 import uuid
-import yaml
 from collections import Counter
 from pathlib import Path
 from typing import List, Dict, Any
+from utils.util import setup_logging, load_config
 
 class AssetGenerator:
     """
@@ -37,19 +36,8 @@ class AssetGenerator:
         Args:
             config_file (str): Path to the YAML configuration file
         """
-        # Configure logging
-        logging.basicConfig(
-            level=logging.INFO,
-            format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-            handlers=[
-                logging.StreamHandler(),
-                logging.FileHandler('asset_generator.log')
-            ]
-        )
-        self.logger = logging.getLogger(__name__)
-        
-        # Load configuration and initialize settings
-        self.config = self._load_config(config_file)
+        self.logger = setup_logging('asset_generator.log', __name__)
+        self.config = load_config(config_file, self.logger)
         self._initialize_settings()
     
     def _initialize_settings(self):
@@ -60,6 +48,9 @@ class AssetGenerator:
         for asset generation, including asset types, locations, port mappings,
         and distribution weights.
         """
+        self.default_paths = self.config.get('default_paths', {})
+
+        # Load asset types, locations, and common ports
         self.asset_types = self.config.get('asset_types', [])
         self.locations = self.config.get('locations', [])
         self.common_ports = self.config.get('common_ports', [])
@@ -71,84 +62,16 @@ class AssetGenerator:
         self.location_exposure_multiplier = self.config.get('location_exposure_multiplier', {})
         self.asset_type_distribution = self.config.get('asset_type_distribution', {})
         
-        # Get default paths
-        self.default_paths = self.config.get('default_paths', {})
+        # Load performance configuration
+        perf_config = self.config.get('performance_config', {})
+        self.default_asset_count = perf_config.get('default_asset_count', 10)  # was hardcoded as 10
+        self.max_asset_batch_size = perf_config.get('max_asset_batch_size', 1000)  # was hardcoded as 1000
+        self.progress_interval = perf_config.get('progress_report_interval', 100)  # was hardcoded as 100
+        self.hostname_adjective_count = perf_config.get('hostname_adjective_count', 50)  # was hardcoded as 50
+        self.hostname_noun_count = perf_config.get('hostname_noun_count', 100)  # was hardcoded as 100
         
         self.logger.info(f"Initialized AssetGenerator with {len(self.asset_types)} asset types and {len(self.locations)} locations")
-    
-    def _load_config(self, config_file: str) -> Dict[str, Any]:
-        """
-        Load configuration from YAML file with comprehensive error handling.
-        
-        Args:
-            config_file (str): Path to the YAML configuration file
-            
-        Returns:
-            Dict[str, Any]: Configuration dictionary
-            
-        Raises:
-            Uses fallback configuration if file cannot be loaded
-        """
-        try:
-            with open(config_file, 'r', encoding='utf-8') as f:
-                config = yaml.safe_load(f)
-                self.logger.info(f"Successfully loaded configuration from {config_file}")
-                return config
-        except FileNotFoundError:
-            self.logger.warning(f"Configuration file {config_file} not found, using fallback configuration")
-            return self._get_fallback_config()
-        except PermissionError:
-            self.logger.error(f"Permission denied accessing {config_file}, using fallback configuration")
-            return self._get_fallback_config()
-        except yaml.YAMLError as e:
-            self.logger.error(f"Invalid YAML in {config_file}: {e}, using fallback configuration")
-            return self._get_fallback_config()
-        except Exception as e:
-            self.logger.error(f"Unexpected error loading config file {config_file}: {e}, using fallback configuration")
-            return self._get_fallback_config()
-    
-    def _get_fallback_config(self) -> Dict[str, Any]:
-        """
-        Provide fallback configuration if config file cannot be loaded.
-        
-        Returns:
-            Dict[str, Any]: Default configuration with basic asset types,
-                          locations, ports, and distribution settings
-        """
-        return {
-            'asset_types': ["Desktop", "Laptop", "Server"],
-            'locations': ["Remote", "Internal", "Data center", "Cloud"],
-            'common_ports': [22, 80, 443, 3389, 8080],
-            'asset_location_mapping': {
-                "Desktop": ["Remote", "Internal"],
-                "Laptop": ["Remote", "Internal"],
-                "Server": ["Internal", "Data center", "Cloud"]
-            },
-            'asset_port_mapping': {
-                "Desktop": [22, 3389],
-                "Laptop": [22, 3389],
-                "Server": [22, 80, 443]
-            },
-            'asset_internet_exposure_base': {
-                "Desktop": 0.05,
-                "Laptop": 0.10,
-                "Server": 0.25
-            },
-            'location_exposure_multiplier': {
-                "Remote": 1.5,
-                "Internal": 0.3,
-                "Data center": 0.8,
-                "Cloud": 1.2
-            },
-            'asset_type_distribution': {
-                "Desktop": 40.0,
-                "Laptop": 35.0,
-                "Server": 25.0
-            },
-            'default_paths': {
-                'asset_output': 'data/raw/assets.json'
-            }
-        }
+        self.logger.info(f"Performance settings: default_count={self.default_asset_count}, batch_size={self.max_asset_batch_size}, progress_interval={self.progress_interval}")
 
     def generate_user_accounts(self, is_privileged: bool = False, count: int = 0) -> List[str]:
         """
@@ -246,7 +169,17 @@ class AssetGenerator:
             OSError: If file operations fail
         """
         self.logger.info(f"Generating {count} assets")
-        assets = [self.generate_single_asset() for _ in range(count)]
+        
+        assets = []
+        for i in range(count):
+            asset = self.generate_single_asset()
+            assets.append(asset)
+            
+            # Simple progress logging
+            if (i + 1) % self.progress_interval == 0 or (i + 1) == count:
+                self.logger.info(f"Generated {i + 1}/{count} assets ({((i + 1)/count)*100:.1f}%)")
+        
+        self.logger.info(f"Successfully generated {len(assets)} assets")
         
         if output_file:
             try:
@@ -290,10 +223,7 @@ class AssetGenerator:
         try:
             with open(output_file, 'w', encoding='utf-8') as f:
                 json.dump(assets, f, indent=2, ensure_ascii=False)
-        except json.JSONEncodeError as e:
-            self.logger.error(f"Failed to encode assets as JSON: {e}")
-            raise
-        except OSError as e:
+        except Exception as e:
             self.logger.error(f"Failed to write JSON file {output_file}: {e}")
             raise
     
@@ -438,9 +368,6 @@ class AssetGenerator:
                         self.logger.warning(f"Error processing asset {i} for SQL: {e}, skipping")
                         continue
                         
-        except OSError as e:
-            self.logger.error(f"Failed to write SQL file {output_file}: {e}")
-            raise
         except Exception as e:
             self.logger.error(f"Unexpected error saving SQL file {output_file}: {e}")
             raise
@@ -463,7 +390,7 @@ def main():
     and provides detailed generation statistics upon completion.
     """
     parser = argparse.ArgumentParser(description='Generate synthetic asset inventory')
-    parser.add_argument('--count', type=int, default=10, help='Number of assets to generate')
+    parser.add_argument('--count', type=int, default=10, help='Number of assets to generate (default from config)')
     parser.add_argument('--output', type=str, default='', 
                         help='Output file path')
     parser.add_argument('--output-format', type=str, choices=['json', 'csv', 'sql'], default='json',
@@ -471,6 +398,10 @@ def main():
     args = parser.parse_args()
 
     generator = AssetGenerator()
+    
+    # Use config default if count is still 10 (default)
+    if args.count == 10:
+        args.count = generator.default_asset_count
     
     # Use config default if no output specified, but adjust extension based on format
     if args.output:

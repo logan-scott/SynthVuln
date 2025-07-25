@@ -374,3 +374,26 @@ findings_config:
   
   detection_probability: 0.7   # 70% chance a vulnerability is detected
   false_positive_rate: 0.1     # 10% chance of false positive findings
+
+# Performance and caching configuration
+performance_config:
+  # Cache settings for NVD vulnerability data
+  cache_duration_seconds: 3600  # 1 hour cache duration (was hardcoded as 3600)
+  
+  # Directory and file limits
+  max_directory_scan_depth: 10  # Maximum depth for directory scanning (was hardcoded as 10)
+  
+  # Progress reporting intervals
+  progress_report_interval: 100  # Report progress every N items (was hardcoded as 100)
+  
+  # Asset generation limits
+  default_asset_count: 10       # Default number of assets to generate (was hardcoded as 10)
+  max_asset_batch_size: 1000    # Maximum assets to generate in one batch (was hardcoded as 1000)
+  
+  # Hostname generation settings
+  hostname_adjective_count: 50   # Number of adjectives for hostname generation (was hardcoded as 50)
+  hostname_noun_count: 100       # Number of nouns for hostname generation (was hardcoded as 100)
+  
+  # Vulnerability processing limits
+  vuln_processing_batch_size: 500  # Process vulnerabilities in batches of this size
+  max_retries: 3                   # Maximum retry attempts for failed operations

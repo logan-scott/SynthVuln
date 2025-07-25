@@ -1,17 +1,15 @@
 import argparse
 import csv
 import json
-import logging
 import os
 import random
+import re
 import sqlite3
 import time
 import uuid
-import yaml
-from collections import Counter
 from datetime import datetime, timedelta
-from pathlib import Path
 from typing import List, Dict, Any
+from utils.util import setup_logging, load_config
 
 class FindingsGenerator:
     """Generator for synthetic vulnerability findings.
@@ -33,29 +31,20 @@ class FindingsGenerator:
         Args:
             config_file: Path to YAML configuration file containing generator settings
         """
-        # Configure logging
-        logging.basicConfig(
-            level=logging.INFO,
-            format='%(asctime)s - %(levelname)s - %(message)s',
-            handlers=[
-                logging.StreamHandler(),
-                logging.FileHandler('findings_generator.log', mode='a')
-            ]
-        )
-        
-        self.config = self._load_config(config_file)
+        self.logger = setup_logging('findings_generator.log', __name__)
+        self.config = load_config(config_file, self.logger, use_fallback=False)
         self._initialize_settings()
         
     def _initialize_settings(self):
-        """Initialize all settings and load required data.
+        """
+        Initialize all settings and load required data.
         
         Loads configuration for detection tools, severity weights, recent bias settings,
-        and vulnerability count ranges from the configuration file.
+        vulnerability count ranges, and performance settings from the configuration file.
         """
-        # Get default paths
         self.default_paths = self.config.get('default_paths', {})
         
-        # Initialize findings-specific configuration
+        # Load findings-specific configuration
         findings_config = self.config.get('findings_config', {})
         self.detection_tools = findings_config.get('detection_tools', [
             "Nessus", "Qualys", "OpenVAS", "Nexpose", "Tenable.io"
@@ -69,6 +58,15 @@ class FindingsGenerator:
         self.vulnerability_counts = findings_config.get('vulnerability_counts', {
             'min': 1, 'max': 8
         })
+        
+        # Load performance configuration
+        perf_config = self.config.get('performance_config', {})
+        self.cache_duration = perf_config.get('cache_duration_seconds', 3600)  # Was hardcoded as 3600
+        self.max_directory_depth = perf_config.get('max_directory_scan_depth', 10)  # Was hardcoded as 10
+        self.progress_interval = perf_config.get('progress_report_interval', 100)  # Was hardcoded as 100
+        self.max_unique_vulns = findings_config.get('max_unique_vulns', 5000)  # From findings config
+        self.vuln_batch_size = perf_config.get('vuln_processing_batch_size', 500)
+        self.max_retries = perf_config.get('max_retries', 3)
         
     def initialize_for_generation(self, asset_file: str = '', num_findings: int = 10, bias_recent: bool = True):
         """Initialize generator for findings generation with specific parameters.
@@ -108,16 +106,16 @@ class FindingsGenerator:
                 return self._load_assets_sql()
             else:
                 # Default to JSON if extension is unknown
-                print(f"Unknown file extension '{file_ext}', attempting JSON format...")
+                self.logger.warning(f"Unknown file extension '{file_ext}', attempting JSON format...")
                 return self._load_assets_json()
         except FileNotFoundError:
-            logging.error(f"Asset file not found: {self.asset_file}")
+            self.logger.error(f"Asset file not found: {self.asset_file}")
             return []
         except PermissionError:
-            logging.error(f"Permission denied accessing asset file: {self.asset_file}")
+            self.logger.error(f"Permission denied accessing asset file: {self.asset_file}")
             return []
         except Exception as e:
-            logging.error(f"Unexpected error loading assets from {self.asset_file}: {e}")
+            self.logger.error(f"Unexpected error loading assets from {self.asset_file}: {e}")
             return []
     
     def _load_assets_json(self) -> List[Dict[str, Any]]:
@@ -133,10 +131,10 @@ class FindingsGenerator:
             with open(self.asset_file, 'r') as f:
                 return json.load(f)
         except json.JSONDecodeError as e:
-            logging.error(f"Invalid JSON in asset file {self.asset_file}: {e}")
+            self.logger.error(f"Invalid JSON in asset file {self.asset_file}: {e}")
             return []
         except Exception as e:
-            logging.error(f"Error reading JSON asset file {self.asset_file}: {e}")
+            self.logger.error(f"Error loading assets from JSON {self.asset_file}: {e}")
             return []
     
     def _load_assets_csv(self) -> List[Dict[str, Any]]:
@@ -175,10 +173,10 @@ class FindingsGenerator:
                         }
                         assets.append(asset)
                     except (KeyError, ValueError) as e:
-                        logging.warning(f"Error processing CSV row {row_num} in {self.asset_file}: {e}")
+                        self.logger.warning(f"Error processing CSV row {row_num} in {self.asset_file}: {e}")
                         continue
         except Exception as e:
-            logging.error(f"Error reading CSV asset file {self.asset_file}: {e}")
+            self.logger.error(f"Error reading CSV asset file {self.asset_file}: {e}")
             return []
         return assets
     
@@ -226,26 +224,24 @@ class FindingsGenerator:
                             }
                             assets.append(asset)
                         except (KeyError, ValueError, TypeError) as e:
-                            logging.warning(f"Error processing SQL row {i+1} in {self.asset_file}: {e}")
+                            self.logger.warning(f"Error processing SQL row {i+1} in {self.asset_file}: {e}")
                             continue
                 except sqlite3.Error as e:
-                    logging.error(f"Database error reading assets from {self.asset_file}: {e}")
+                    self.logger.error(f"Database error reading assets from {self.asset_file}: {e}")
                     return []
                 finally:
                     conn.close()
             except sqlite3.Error as e:
-                logging.error(f"Error connecting to SQLite database {self.asset_file}: {e}")
+                self.logger.error(f"Error connecting to SQLite database {self.asset_file}: {e}")
                 return []
         else:
-            # Assume it's a SQL script file
-            import re
             try:
                 with open(self.asset_file, 'r', encoding='utf-8') as f:
                     content = f.read()
                     
-                # Parse INSERT statements
-                insert_pattern = r"INSERT INTO assets \([^)]+\) VALUES \(([^)]+)\);"
-                matches = re.findall(insert_pattern, content)
+                # Parse INSERT statements (handle both formats: with and without column names)
+                insert_pattern = r"INSERT INTO assets(?:\s+\([^)]+\))?\s+VALUES\s+\(([^)]+)\);"
+                matches = re.findall(insert_pattern, content, re.IGNORECASE)
                 
                 for i, match in enumerate(matches):
                     try:
@@ -269,37 +265,17 @@ class FindingsGenerator:
                             }
                             assets.append(asset)
                         else:
-                            logging.warning(f"Insufficient fields in SQL INSERT statement {i+1} in {self.asset_file}")
+                            self.logger.warning(f"Insufficient fields in SQL INSERT statement {i+1} in {self.asset_file}")
                     except (ValueError, IndexError) as e:
-                        logging.warning(f"Error parsing SQL INSERT statement {i+1} in {self.asset_file}: {e}")
+                        self.logger.warning(f"Error parsing SQL INSERT statement {i+1} in {self.asset_file}: {e}")
                         continue
             except Exception as e:
-                logging.error(f"Error reading SQL script file {self.asset_file}: {e}")
+                self.logger.error(f"Error reading SQL script file {self.asset_file}: {e}")
                 return []
         
         return assets
     
-    def _load_config(self, config_file: str) -> Dict[str, Any]:
-        """Load configuration from YAML file.
-        
-        Args:
-            config_file: Path to YAML configuration file
-            
-        Returns:
-            Dictionary containing configuration settings, empty dict if file not found
-            
-        Raises:
-            Logs warnings for missing files and errors for parsing issues
-        """
-        try:
-            with open(config_file, 'r') as f:
-                return yaml.safe_load(f)
-        except FileNotFoundError:
-            print(f"Warning: Config file {config_file} not found. Using defaults.")
-            return {}
-        except Exception as e:
-            print(f"Error loading config: {e}")
-            return {}
+
     
     def _load_vulnerabilities(self) -> List[Dict[str, Any]]:
         """Load vulnerabilities from data sources using caching and optimized approach.
@@ -319,11 +295,11 @@ class FindingsGenerator:
         if (FindingsGenerator._vulnerability_cache is not None and 
             FindingsGenerator._cache_timestamp is not None and 
             current_time - FindingsGenerator._cache_timestamp < 3600):  # 1 hour cache
-            print(f"Using cached vulnerabilities ({len(FindingsGenerator._vulnerability_cache)} available)")
+            self.logger.info(f"Using cached vulnerabilities ({len(FindingsGenerator._vulnerability_cache)} available)")
             return FindingsGenerator._vulnerability_cache
         
         try:
-            print("Loading vulnerability data...")
+            self.logger.info("Loading vulnerability data...")
             
             # Load NVD data using streaming approach
             nvd_base = self.config.get('default_paths', {}).get('nvd_data_dir', 'data/raw/nvd')
@@ -333,12 +309,12 @@ class FindingsGenerator:
             FindingsGenerator._vulnerability_cache = vulnerabilities
             FindingsGenerator._cache_timestamp = current_time
             
-            print(f"Loaded {len(vulnerabilities)} vulnerabilities from NVD database")
+            self.logger.info(f"Loaded {len(vulnerabilities)} vulnerabilities from NVD database")
             
             return vulnerabilities
             
         except Exception as e:
-            print(f"Error loading vulnerabilities: {e}")
+            self.logger.error(f"Error loading vulnerabilities: {e}")
             # Fallback to sample CVEs
             fallback_vulns = [
                 {"id": "CVE-2023-1234", "severity": "HIGH", "base_score": 8.5, "description": "Sample vulnerability", "year": 2023},
@@ -367,7 +343,7 @@ class FindingsGenerator:
         vulnerabilities = []
         
         if not os.path.exists(nvd_base):
-            print(f"Warning: NVD database path not found: {nvd_base}")
+            self.logger.warning(f"Warning: NVD database path not found: {nvd_base}")
             return vulnerabilities
         
         # Get all year directories and sort them in reverse order (newest first)
@@ -375,7 +351,7 @@ class FindingsGenerator:
         year_dirs.sort(reverse=True)
         
         if not year_dirs:
-            print("No CVE year directories found")
+            self.logger.warning("No CVE year directories found")
             return vulnerabilities
         
         # Calculate target vulnerabilities needed (limit for performance)
@@ -391,8 +367,6 @@ class FindingsGenerator:
             # Equal distribution across years
             target_per_year = {year: target_total // len(year_dirs) for year in year_dirs}
         
-        print(f"Streaming vulnerabilities from {len(year_dirs)} years...")
-        
         # Stream vulnerabilities from each year
         for year_dir in year_dirs:
             if len(vulnerabilities) >= target_total:
@@ -404,10 +378,8 @@ class FindingsGenerator:
                 
             year_vulns = self._stream_year_vulnerabilities(nvd_base, year_dir, year_target)
             vulnerabilities.extend(year_vulns)
-            
-            if len(vulnerabilities) % 1000 == 0:
-                print(f"Streamed {len(vulnerabilities)} vulnerabilities so far...")
         
+        self.logger.info(f"Streaming vulnerabilities completed: {len(year_dirs)}/{len(year_dirs)} items - Completed streaming {len(vulnerabilities)} vulnerabilities")
         return vulnerabilities[:target_total]
     
     def _calculate_year_weights(self, year_dirs: List[str]) -> Dict[str, float]:
@@ -462,7 +434,7 @@ class FindingsGenerator:
                 year_weights[year_dir] = weights['malformed']
         
         return year_weights
-    
+
     def _distribute_targets_by_weight(self, year_weights: Dict[str, float], target_total: int) -> Dict[str, int]:
         """Distribute target counts across years based on weights.
         
@@ -487,7 +459,7 @@ class FindingsGenerator:
             target_per_year[year_dir] = target_count
         
         return target_per_year
-    
+
     def _stream_year_vulnerabilities(self, nvd_base: str, year_dir: str, target_count: int) -> List[Dict[str, Any]]:
         """Stream vulnerabilities from a specific year directory.
         
@@ -519,7 +491,7 @@ class FindingsGenerator:
             range_dirs.sort()
         
         # Iterate through range directories (limit for performance)
-        dirs_to_process = range_dirs[:min(len(range_dirs), 10)]  # Limit to 10 range directories max
+        dirs_to_process = range_dirs[:min(len(range_dirs), self.max_directory_depth)]  # Use configured directory limit
         
         for i, range_dir in enumerate(dirs_to_process):
             if len(year_vulns) >= target_count:
@@ -611,21 +583,19 @@ class FindingsGenerator:
                     })
                     
                 except FileNotFoundError:
-                    logging.warning(f"Vulnerability file not found: {nvd_path}")
+                    self.logger.warning(f"Vulnerability file not found: {nvd_path}")
                     continue
                 except json.JSONDecodeError as e:
-                    logging.warning(f"Invalid JSON in vulnerability file {nvd_path}: {e}")
+                    self.logger.warning(f"Invalid JSON in vulnerability file {nvd_path}: {e}")
                     continue
                 except KeyError as e:
-                    logging.warning(f"Missing required field in vulnerability file {nvd_path}: {e}")
+                    self.logger.warning(f"Missing required field in vulnerability file {nvd_path}: {e}")
                     continue
                 except Exception as e:
-                    logging.error(f"Unexpected error processing vulnerability file {nvd_path}: {e}")
+                    self.logger.error(f"Unexpected error processing vulnerability file {nvd_path}: {e}")
                     continue
         
         return year_vulns
-    
-
 
     def generate_findings(self, 
                          num_findings: int = 0,
@@ -700,6 +670,7 @@ class FindingsGenerator:
 
                 findings.append(finding)
 
+        self.logger.info(f"Findings generation completed: {len(findings)}/{num_findings} items - Generated {len(findings)} findings")
         return findings
 
     def save_findings(self, findings: List[Dict[str, Any]], output_file: str = '', output_format: str = 'json'):
