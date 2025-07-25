@@ -9,6 +9,9 @@ import time
 import uuid
 from datetime import datetime, timedelta
 from typing import List, Dict, Any
+import sys
+import os
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 from utils.util import setup_logging, load_config
 
 class FindingsGenerator:
@@ -32,7 +35,7 @@ class FindingsGenerator:
             config_file: Path to YAML configuration file containing generator settings
         """
         self.logger = setup_logging('findings_generator.log', __name__)
-        self.config = load_config(config_file, self.logger, use_fallback=False)
+        self.config = load_config(config_file, self.logger, use_fallback=True)
         self._initialize_settings()
         
     def _initialize_settings(self):

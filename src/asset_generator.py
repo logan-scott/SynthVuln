@@ -6,6 +6,9 @@ import uuid
 from collections import Counter
 from pathlib import Path
 from typing import List, Dict, Any
+import sys
+import os
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 from utils.util import setup_logging, load_config
 
 class AssetGenerator:

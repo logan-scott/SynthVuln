@@ -91,24 +91,78 @@ def get_fallback_config() -> Dict[str, Any]:
     """Get fallback configuration when config file cannot be loaded.
     
     Returns:
-        Dictionary containing minimal fallback configuration
+        Dictionary containing comprehensive fallback configuration
     """
     return {
-        'asset_config': {
-            'asset_types': ['Server', 'Desktop', 'Mobile device', 'Network device'],
-            'locations': ['Internal', 'Remote', 'Data center', 'Cloud']
+        # Asset types and locations
+        'asset_types': ['Server', 'Desktop', 'Laptop', 'Mobile device', 'Network device', 'Storage server'],
+        'locations': ['Internal', 'Remote', 'Data center', 'Cloud'],
+        'common_ports': [22, 23, 25, 53, 80, 110, 143, 443, 993, 995, 3389, 5432, 3306],
+        
+        # Asset type distribution weights
+        'asset_type_distribution': {
+            'Server': 0.3,
+            'Desktop': 0.25,
+            'Laptop': 0.2,
+            'Mobile device': 0.1,
+            'Network device': 0.1,
+            'Storage server': 0.05
         },
-        'findings_config': {
-            'detection_tools': ['Nessus', 'Qualys', 'OpenVAS', 'Nexpose', 'Tenable.io'],
-            'severity_weights': {'CRITICAL': 5, 'HIGH': 15, 'MEDIUM': 35, 'LOW': 45}
+        
+        # Asset location mapping
+        'asset_location_mapping': {
+            'Server': ['Internal', 'Data center', 'Cloud'],
+            'Desktop': ['Internal', 'Remote'],
+            'Laptop': ['Internal', 'Remote'],
+            'Mobile device': ['Internal', 'Remote'],
+            'Network device': ['Internal', 'Data center'],
+            'Storage server': ['Internal', 'Data center']
         },
+        
+        # Asset port mapping
+        'asset_port_mapping': {
+            'Server': [22, 80, 443, 3389, 5432, 3306],
+            'Desktop': [22, 80, 443, 3389],
+            'Laptop': [22, 80, 443, 3389],
+            'Mobile device': [80, 443],
+            'Network device': [22, 23, 80, 443],
+            'Storage server': [22, 80, 443, 5432]
+        },
+        
+        # Internet exposure probabilities
+        'asset_internet_exposure_base': {
+            'Server': 0.4,
+            'Desktop': 0.1,
+            'Laptop': 0.2,
+            'Mobile device': 0.8,
+            'Network device': 0.3,
+            'Storage server': 0.2
+        },
+        
+        # Location exposure multipliers
+        'location_exposure_multiplier': {
+            'Internal': 0.1,
+            'Remote': 1.5,
+            'Data center': 0.8,
+            'Cloud': 2.0
+        },
+        
+        # Findings configuration
+        'detection_tools': ['Nessus', 'Qualys', 'OpenVAS', 'Nexpose', 'Tenable.io'],
+        'severity_weights': {'CRITICAL': 5, 'HIGH': 15, 'MEDIUM': 35, 'LOW': 45},
+        
+        # Performance configuration
         'performance_config': {
-            'default_count': 10,
-            'batch_size': 1000,
-            'progress_report_interval': 100
+            'default_asset_count': 10,
+            'max_asset_batch_size': 1000,
+            'progress_report_interval': 100,
+            'hostname_adjective_count': 50,
+            'hostname_noun_count': 100
         },
+        
+        # Default paths
         'default_paths': {
-            'asset_output': 'data/raw/assets.json',
-            'findings_output': 'data/raw/findings.json'
+            'asset_output': 'data/outputs/assets.json',
+            'findings_output': 'data/outputs/findings.json'
         }
     }
