@@ -807,7 +807,7 @@ def main():
         --no-bias-recent: Disable bias towards recent CVEs
         --output: Output file path
         --output-format: Output format (json, csv, sql)
-        --input-file: Input asset file path
+        --input: Input asset file path
     """
     parser = argparse.ArgumentParser(description='Generate vulnerability findings')
     parser.add_argument('--count', type=int, default=10, 
@@ -818,13 +818,13 @@ def main():
                        help='Output file path (uses config default if not specified)')
     parser.add_argument('--output-format', type=str, choices=['json', 'csv', 'sql'], default='json',
                        help='Output format (default: json)')
-    parser.add_argument('--input-file', type=str, default='',
+    parser.add_argument('--input', type=str, default='',
                        help='Input asset file path (JSON, CSV, or SQLite database). Supports .json, .csv, .db, .sqlite extensions')
     args = parser.parse_args()
     
     generator = FindingsGenerator()
     generator.initialize_for_generation(
-        asset_file=args.input_file,
+        asset_file=args.input,
         num_findings=args.count,
         bias_recent=not args.no_bias_recent
     )
