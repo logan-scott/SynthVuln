@@ -48,6 +48,336 @@ common_ports:
 - 8443                    # Alternative HTTPS
 - 3306                    # MySQL
 - 5432                    # PostgreSQL
+
+# Operating system definitions - comprehensive list covering enterprise environments
+operating_systems:
+  Windows:
+    - Windows 11 Pro
+    - Windows 11 Enterprise
+    - Windows 11 Home
+    - Windows 10 Pro
+    - Windows 10 Home
+    - Windows 10 Enterprise
+    - Windows Server 2025
+    - Windows Server 2022
+    - Windows Server 2019
+    - Windows Server 2016
+    - Windows Server 2012 R2
+    - Windows Server 2008 R2
+  Linux:
+    - Ubuntu 24.04 LTS
+    - Ubuntu 22.04 LTS
+    - Ubuntu 20.04 LTS
+    - Ubuntu 18.04 LTS
+    - Red Hat Enterprise Linux 9.6
+    - Red Hat Enterprise Linux 9.5
+    - Red Hat Enterprise Linux 9.4
+    - Red Hat Enterprise Linux 9.3
+    - Red Hat Enterprise Linux 9.2
+    - Red Hat Enterprise Linux 9.1
+    - Red Hat Enterprise Linux 9.0
+    - Red Hat Enterprise Linux 8.10
+    - Red Hat Enterprise Linux 8.9
+    - Red Hat Enterprise Linux 8.8
+    - Red Hat Enterprise Linux 8.7
+    - Red Hat Enterprise Linux 8.6
+    - Red Hat Enterprise Linux 8.5
+    - Red Hat Enterprise Linux 8.4
+    - Red Hat Enterprise Linux 8.3
+    - Red Hat Enterprise Linux 8.2
+    - Red Hat Enterprise Linux 8.1
+    - Red Hat Enterprise Linux 8.0
+    - Red Hat Enterprise Linux 7.9
+    - Red Hat Enterprise Linux 7.8
+    - Red Hat Enterprise Linux 7.7
+    - Red Hat Enterprise Linux 7.6
+    - Red Hat Enterprise Linux 7.5
+    - Red Hat Enterprise Linux 7.4
+    - Red Hat Enterprise Linux 7.3
+    - Red Hat Enterprise Linux 7.2
+    - Red Hat Enterprise Linux 7.1
+    - Red Hat Enterprise Linux 7.0
+    - CentOS 8
+    - CentOS 7
+    - SUSE Linux Enterprise Server 15
+    - SUSE Linux Enterprise Server 12
+    - SUSE Linux Enterprise Server 11
+    - Debian 12
+    - Debian 11
+    - Debian 10
+    - Amazon Linux 2023
+    - Amazon Linux 2
+  macOS:
+    - macOS Tahoe 26
+    - macOS Sequoia 15
+    - macOS Sonoma 14
+    - macOS Ventura 13
+    - macOS Monterey 12
+    - macOS Big Sur 11
+    - macOS Catalina 10.15
+  Mobile:
+    - iOS 18
+    - iOS 17
+    - iOS 16
+    - iOS 15
+    - iOS 14
+    - iOS 13
+    - Android 16
+    - Android 15
+    - Android 14
+    - Android 13
+    - Android 12
+    - Android 11
+    - Android 10
+  Virtualization:
+    - VMware vSphere 9.0
+    - VMware vSphere 8.0
+    - VMware vSphere 7.0
+    - Microsoft Hyper-V 2022
+    - Microsoft Hyper-V 2019
+    - Citrix XenServer 8
+    - Proxmox VE 8.4
+    - Proxmox VE 8.3
+    - Proxmox VE 8.2
+    - Proxmox VE 8.1
+    - Proxmox VE 8.0
+  Container:
+    - Docker Engine 27
+    - Docker Engine 26
+    - Docker Engine 25
+    - Docker Engine 24
+    - Docker Engine 23
+    - Kubernetes 1.33
+    - Kubernetes 1.32
+    - Kubernetes 1.31
+    - Kubernetes 1.30
+    - OpenShift 4.19
+    - OpenShift 4.18
+    - OpenShift 4.17
+    - OpenShift 4.16
+  Network:
+    - Cisco IOS 15.5
+    - Cisco IOS 15.4
+    - Cisco IOS 15.3
+    - Cisco IOS 15.2
+    - Cisco IOS 15.1
+    - Cisco IOS 15.0
+    - Cisco IOS XE 17.17
+    - Cisco IOS XE 17.16
+    - Cisco IOS XE 17.15
+    - Cisco IOS XE 17.14
+    - Cisco IOS XE 17.13
+    - Cisco IOS XE 17.12
+    - Cisco IOS XE 17.11
+    - Cisco IOS XE 17.10
+    - Cisco IOS XE 17.9
+    - Cisco IOS XE 17.8
+    - Cisco IOS XE 17.7
+    - Cisco IOS XE 17.6
+    - Cisco IOS XE 17.5
+    - Cisco IOS XE 17.4
+    - Cisco IOS XE 17.3
+    - Cisco IOS XE 17.2
+    - Cisco IOS XE 17.1
+    - PAN-OS 11.2 # Released 02 May 2024
+    - PAN-OS 11.1
+    - PAN-OS 11.0
+    - PAN-OS 10.2
+    - PAN-OS 10.1
+    - PAN-OS 10.0
+    - PAN-OS 9.1
+    - PAN-OS 9.0
+    - PAN-OS 8.1
+    - PAN-OS 8.0
+    - PAN-OS 7.1
+    - PAN-OS 7.0 # Released 04 June 2015
+    - pfSense 2.9
+    - pfSense 2.8
+    - pfSense 2.7
+    - pfSense 2.6
+    - pfSense 2.5
+    - pfSense 2.4
+    - pfSense 2.3
+    - pfSense 2.2
+    - pfSense 2.1
+    - pfSense 2.0
+    - pfSense 1.2
+  Embedded:
+    - Embedded Linux
+    - FreeRTOS
+    - VxWorks
+    - QNX
+
+# Asset lifecycle stage definitions - typical enterprise asset management stages
+lifecycle_stages:
+  - Production            # Live, business-critical systems
+  - Development           # Development and testing environments
+  - Staging               # Pre-production testing and validation
+  - Testing               # Quality assurance and testing
+  - Decommissioned        # End-of-life, scheduled for removal
+  - Maintenance           # Temporarily offline for updates/repairs
+  - Pilot                 # Proof-of-concept or trial deployments
+  - Backup                # Standby systems for disaster recovery
+
+# Asset to operating system mapping - defines which OS types can run on each asset type
+asset_os_mapping:
+  Desktop:
+    - Windows
+    - macOS
+    - Linux
+  Laptop:
+    - Windows
+    - macOS
+    - Linux
+  Mobile device:
+    - Mobile
+  Workstation:
+    - Windows
+    - macOS
+    - Linux
+  Server:
+    - Windows
+    - Linux
+  Webserver:
+    - Windows
+    - Linux
+  Storage server:
+    - Windows
+    - Linux
+  Virtualization server:
+    - Virtualization
+    - Windows
+    - Linux
+  Virtual machine:
+    - Windows
+    - Linux
+  Container:
+    - Container
+    - Linux
+  Kubernetes cluster:
+    - Container
+    - Linux
+  Serverless:
+    - Container
+    - Linux
+  Database server:
+    - Windows
+    - Linux
+  Application server:
+    - Windows
+    - Linux
+  Mail server:
+    - Windows
+    - Linux
+  Firewall:
+    - Network
+    - Embedded
+    - Linux
+  Load balancer:
+    - Network
+    - Linux
+  Router:
+    - Network
+    - Embedded
+  Switch:
+    - Network
+    - Embedded
+  Proxy server:
+    - Windows
+    - Linux
+  DNS server:
+    - Windows
+    - Linux
+  DHCP server:
+    - Windows
+    - Linux
+  Identity server:
+    - Windows
+    - Linux
+  VPN server:
+    - Windows
+    - Linux
+
+# Operating system distribution weights by asset type (percentages)
+os_distribution_by_asset:
+  Desktop:
+    Windows: 75.0
+    macOS: 15.0
+    Linux: 10.0
+  Laptop:
+    Windows: 70.0
+    macOS: 20.0
+    Linux: 10.0
+  Mobile device:
+    Mobile: 100.0
+  Workstation:
+    Windows: 60.0
+    macOS: 25.0
+    Linux: 15.0
+  Server:
+    Linux: 70.0
+    Windows: 30.0
+  Webserver:
+    Linux: 80.0
+    Windows: 20.0
+  Storage server:
+    Linux: 65.0
+    Windows: 35.0
+  Virtualization server:
+    Virtualization: 60.0
+    Linux: 25.0
+    Windows: 15.0
+  Virtual machine:
+    Linux: 60.0
+    Windows: 35.0
+    macOS: 5.0
+  Container:
+    Container: 70.0
+    Linux: 30.0
+  Kubernetes cluster:
+    Container: 80.0
+    Linux: 20.0
+  Serverless:
+    Container: 90.0
+    Linux: 10.0
+  Database server:
+    Linux: 75.0
+    Windows: 25.0
+  Application server:
+    Linux: 70.0
+    Windows: 30.0
+  Mail server:
+    Linux: 60.0
+    Windows: 40.0
+  Firewall:
+    Network: 70.0
+    Embedded: 20.0
+    Linux: 10.0
+  Load balancer:
+    Network: 50.0
+    Linux: 50.0
+  Router:
+    Network: 80.0
+    Embedded: 20.0
+  Switch:
+    Network: 85.0
+    Embedded: 15.0
+  Proxy server:
+    Linux: 80.0
+    Windows: 20.0
+  DNS server:
+    Linux: 75.0
+    Windows: 25.0
+  DHCP server:
+    Linux: 70.0
+    Windows: 30.0
+  Identity server:
+    Windows: 60.0
+    Linux: 40.0
+  VPN server:
+    Linux: 65.0
+    Windows: 35.0
+
 # Asset to location mapping - defines where each asset type can be deployed
 asset_location_mapping:
   Desktop:                  # End-user workstations
@@ -135,6 +465,18 @@ asset_location_mapping:
   - Internal                # Office VPN gateways
   - Data center             # Enterprise VPN
   - Cloud                   # Cloud VPN services
+
+# Lifecycle stage distribution weights - defines probability of each stage
+lifecycle_stage_distribution:
+  Production: 60.0          # Most assets are in production
+  Development: 15.0         # Development environments
+  Staging: 8.0              # Pre-production testing
+  Testing: 7.0              # QA and testing environments
+  Decommissioned: 4.0       # End-of-life assets
+  Maintenance: 3.0          # Temporarily offline
+  Pilot: 2.0                # Proof-of-concept deployments
+  Backup: 1.0               # Standby/disaster recovery
+
 # Asset to port mapping - defines typical open ports for each asset type
 asset_port_mapping:
   Desktop:                  # End-user workstations

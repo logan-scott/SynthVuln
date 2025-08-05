@@ -65,13 +65,22 @@ class AssetGenerator:
         self.location_exposure_multiplier = self.config.get('location_exposure_multiplier', {})
         self.asset_type_distribution = self.config.get('asset_type_distribution', {})
         
+        # Load operating system configuration
+        self.operating_systems = self.config.get('operating_systems', {})
+        self.asset_os_mapping = self.config.get('asset_os_mapping', {})
+        self.os_distribution_by_asset = self.config.get('os_distribution_by_asset', {})
+        
+        # Load lifecycle stage configuration
+        self.lifecycle_stages = self.config.get('lifecycle_stages', [])
+        self.lifecycle_stage_distribution = self.config.get('lifecycle_stage_distribution', {})
+        
         # Load performance configuration
         perf_config = self.config.get('performance_config', {})
-        self.default_asset_count = perf_config.get('default_asset_count', 10)  # was hardcoded as 10
-        self.max_asset_batch_size = perf_config.get('max_asset_batch_size', 1000)  # was hardcoded as 1000
-        self.progress_interval = perf_config.get('progress_report_interval', 100)  # was hardcoded as 100
-        self.hostname_adjective_count = perf_config.get('hostname_adjective_count', 50)  # was hardcoded as 50
-        self.hostname_noun_count = perf_config.get('hostname_noun_count', 100)  # was hardcoded as 100
+        self.default_asset_count = perf_config.get('default_asset_count', 10)
+        self.max_asset_batch_size = perf_config.get('max_asset_batch_size', 1000)
+        self.progress_interval = perf_config.get('progress_report_interval', 100)
+        self.hostname_adjective_count = perf_config.get('hostname_adjective_count', 50)
+        self.hostname_noun_count = perf_config.get('hostname_noun_count', 100)
         
         self.logger.info(f"Initialized AssetGenerator with {len(self.asset_types)} asset types and {len(self.locations)} locations")
         self.logger.info(f"Performance settings: default_count={self.default_asset_count}, batch_size={self.max_asset_batch_size}, progress_interval={self.progress_interval}")
@@ -94,6 +103,64 @@ class AssetGenerator:
         prefix = "admin" if is_privileged else "user"
         return [f"{prefix}{i}" for i in range(1, count + 1)]
 
+    def select_operating_system(self, asset_type: str) -> Dict[str, str]:
+        """
+        Select an appropriate operating system for the given asset type.
+        
+        Args:
+            asset_type (str): The type of asset (Desktop, Server, etc.)
+            
+        Returns:
+            Dict[str, str]: Dictionary containing 'os_family' and 'os_version'
+        """
+        # Get valid OS families for this asset type
+        valid_os_families = self.asset_os_mapping.get(asset_type, ['Windows', 'Linux'])
+        
+        # Get distribution weights for this asset type
+        os_weights = self.os_distribution_by_asset.get(asset_type, {})
+        
+        # Filter weights to only include valid OS families
+        filtered_weights = {family: weight for family, weight in os_weights.items() 
+                           if family in valid_os_families}
+        
+        # If no weights found, use equal distribution
+        if not filtered_weights:
+            os_family = random.choice(valid_os_families)
+        else:
+            # Select OS family based on weights
+            families = list(filtered_weights.keys())
+            weights = list(filtered_weights.values())
+            os_family = random.choices(families, weights=weights, k=1)[0]
+        
+        # Select specific OS version from the chosen family
+        available_versions = self.operating_systems.get(os_family, [f"{os_family} Generic"])
+        os_version = random.choice(available_versions)
+        
+        return {
+            'os_family': os_family,
+            'os_version': os_version
+        }
+
+    def select_lifecycle_stage(self) -> str:
+        """
+        Select a lifecycle stage based on configured distribution weights.
+        
+        Returns:
+            str: Selected lifecycle stage
+        """
+        if not self.lifecycle_stages or not self.lifecycle_stage_distribution:
+            # Fallback to default if no configuration
+            return 'Production'
+        
+        # Create weighted choices based on distribution
+        stages = list(self.lifecycle_stage_distribution.keys())
+        weights = list(self.lifecycle_stage_distribution.values())
+        
+        # Use random.choices for weighted selection
+        selected_stage = random.choices(stages, weights=weights, k=1)[0]
+        
+        return selected_stage
+
     def generate_single_asset(self) -> Dict[str, Any]:
         """
         Generate a single synthetic asset with realistic properties.
@@ -110,6 +177,8 @@ class AssetGenerator:
                 - user_accounts: List of regular user accounts
                 - privileged_user_accounts: List of privileged user accounts
                 - type: Asset type (Desktop, Laptop, Server, etc.)
+                - os_family: Operating system family (Windows, Linux, etc.)
+                - os_version: Specific OS version
                 - internet_exposed: Boolean indicating internet exposure
                 - public_ip: Public IP address (if internet exposed)
                 - internal_ip: Internal IP address
@@ -128,6 +197,12 @@ class AssetGenerator:
         valid_ports = self.asset_port_mapping.get(asset_type, self.common_ports)
         location = random.choice(valid_locations)
         
+        # Select operating system for this asset type
+        os_info = self.select_operating_system(asset_type)
+        
+        # Select lifecycle stage
+        lifecycle_stage = self.select_lifecycle_stage()
+        
         # Calculate internet exposure probability based on asset type and location
         base_probability = self.asset_internet_exposure_base.get(asset_type, 0.3)
         location_multiplier = self.location_exposure_multiplier.get(location, 1.0)
@@ -145,6 +220,9 @@ class AssetGenerator:
             "user_accounts": self.generate_user_accounts(),
             "privileged_user_accounts": self.generate_user_accounts(is_privileged=True),
             "type": asset_type,
+            "os_family": os_info['os_family'],
+            "os_version": os_info['os_version'],
+            "lifecycle_stage": lifecycle_stage,
             "internet_exposed": is_internet_exposed,
             "public_ip": f"203.0.{random.randint(1,255)}.{random.randint(1,255)}" if is_internet_exposed else None,
             "internal_ip": f"192.168.{random.randint(1,255)}.{random.randint(1,255)}",
@@ -261,6 +339,9 @@ class AssetGenerator:
                         'user_accounts': ';'.join(asset['user_accounts']),
                         'privileged_user_accounts': ';'.join(asset['privileged_user_accounts']),
                         'type': asset['type'],
+                        'os_family': asset['os_family'],
+                        'os_version': asset['os_version'],
+                        'lifecycle_stage': asset['lifecycle_stage'],
                         'internet_exposed': asset['internet_exposed'],
                         'public_ip': asset['public_ip'] or '',
                         'internal_ip': asset['internal_ip'],
@@ -324,6 +405,9 @@ class AssetGenerator:
                 f.write("    user_accounts TEXT,\n")
                 f.write("    privileged_user_accounts TEXT,\n")
                 f.write("    type VARCHAR(100),\n")
+                f.write("    os_family VARCHAR(50),\n")
+                f.write("    os_version VARCHAR(100),\n")
+                f.write("    lifecycle_stage VARCHAR(50),\n")
                 f.write("    internet_exposed BOOLEAN,\n")
                 f.write("    public_ip VARCHAR(15),\n")
                 f.write("    internal_ip VARCHAR(15),\n")
@@ -346,6 +430,9 @@ class AssetGenerator:
                         domain_name = str(asset['domain_name']).replace("'", "''")
                         hostname = str(asset['hostname']).replace("'", "''")
                         asset_type = str(asset['type']).replace("'", "''")
+                        os_family = str(asset['os_family']).replace("'", "''")
+                        os_version = str(asset['os_version']).replace("'", "''")
+                        lifecycle_stage = str(asset['lifecycle_stage']).replace("'", "''")
                         location = str(asset['location']).replace("'", "''")
                         internal_ip = str(asset['internal_ip']).replace("'", "''")
                         
@@ -356,6 +443,9 @@ class AssetGenerator:
                         f.write(f"    '{user_accounts}',\n")
                         f.write(f"    '{privileged_accounts}',\n")
                         f.write(f"    '{asset_type}',\n")
+                        f.write(f"    '{os_family}',\n")
+                        f.write(f"    '{os_version}',\n")
+                        f.write(f"    '{lifecycle_stage}',\n")
                         f.write(f"    {str(asset['internet_exposed']).lower()},\n")
                         f.write(f"    {'NULL' if public_ip == 'NULL' else f"'{public_ip}'"},\n")
                         f.write(f"    '{internal_ip}',\n")
