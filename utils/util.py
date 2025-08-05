@@ -1,14 +1,21 @@
+import json
 import logging
+import os
 import yaml
+import requests
+from requests.exceptions import RequestException
+from tenacity import retry, wait_exponential, stop_after_attempt
 from typing import Dict, Any
 
+logger = logging.getLogger(__name__)
 
-def setup_logging(log_file: str, logger_name: str = '__main__', log_level: int = logging.INFO) -> logging.Logger:
+
+def setup_logging(log_file: str, logger_name: str = 'SYNTHVULN', log_level: int = logging.INFO) -> logging.Logger:
     """Setup logging configuration for generators.
     
     Args:
         log_file: Path to the log file
-        logger_name: Name for the logger (defaults to '__main__')
+        logger_name: Name for the logger (defaults to 'SYNTHVULN')
         log_level: Logging level (defaults to INFO)
         
     Returns:
@@ -166,3 +173,49 @@ def get_fallback_config() -> Dict[str, Any]:
             'findings_output': 'data/outputs/findings.json'
         }
     }
+
+
+def load_secrets() -> Dict[str, str]:
+    """Load secrets from environment variables.
+        
+    Returns:
+        Dictionary containing secrets
+    """
+    secrets = {}
+    # load from env variable where SYNTHVULN_SECRETS={'nvd_key':'124','qualys_key':'124'}
+    synthvuln_secrets = os.getenv('SYNTHVULN_SECRETS')
+    if synthvuln_secrets:
+        try:
+            secrets = json.loads(synthvuln_secrets)
+        except json.JSONDecodeError:
+            logger.error("SYNTHVULN_SECRETS environment variable is not a valid JSON string")
+            logger.info("Usage: export SYNTHVULN_SECRETS='{\"nvd_key\":\"124\",\"qualys_key\":\"124\"}'")
+        except Exception as e:
+            logger.error(f"Error loading SYNTHVULN_SECRETS: {e}")
+            logger.info("Usage: export SYNTHVULN_SECRETS='{\"nvd_key\":\"124\",\"qualys_key\":\"124\"}'")
+    return secrets
+
+
+@retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=4, max=10))
+def send_request(url: str, params: Dict[str, Any] | None = None, headers: Dict[str, Any] | None = None, method: str = 'GET') -> Dict[str, Any]:
+    """
+    Send HTTP request to specified URL with optional parameters.
+    
+    Args:
+        url: Target URL for request
+        params: Optional query parameters
+        method: HTTP method (GET, POST, etc.)
+        
+    Returns:
+        JSON response data
+        
+    Raises:
+        requests.RequestException: For network errors
+    """
+    try:
+        response = requests.request(method, url, params=params, headers=headers)
+        response.raise_for_status()
+        return response.json()
+    except RequestException as e:
+        logger.error(f"Request failed: {e}")
+        raise e

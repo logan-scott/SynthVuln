@@ -1,8 +1,8 @@
 # Default file paths for generators
 default_paths:
-  asset_output: data/raw/assets.json
-  findings_output: data/raw/findings.json
-  nvd_data_dir: data/raw/vulzoo/processed/nvd-database
+  asset_output: data/outputs/assets.json
+  findings_output: data/outputs/findings.json
+  nvd_data_dir: data/inputs/
 
 # Asset type definitions - comprehensive list covering enterprise environments
 asset_types:

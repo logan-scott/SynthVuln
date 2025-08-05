@@ -334,7 +334,8 @@ class FindingsGenerator:
     def _stream_nvd_vulnerabilities(self, nvd_base: str) -> List[Dict[str, Any]]:
         """Stream NVD vulnerabilities without loading entire dataset into memory.
         
-        Processes vulnerabilities year by year, applying recent bias if configured.
+        First checks for flat JSON file format (nvd_vulnerabilities.json), then
+        processes vulnerabilities year by year, applying recent bias if configured.
         Limits total vulnerabilities loaded for performance.
         
         Args:
@@ -348,6 +349,18 @@ class FindingsGenerator:
         if not os.path.exists(nvd_base):
             self.logger.warning(f"Warning: NVD database path not found: {nvd_base}")
             return vulnerabilities
+        
+        # First, check for flat JSON file format (from our NVD integration)
+        nvd_json_file = os.path.join(nvd_base, 'nvd_vulnerabilities.json')
+        if os.path.exists(nvd_json_file):
+            try:
+                with open(nvd_json_file, 'r', encoding='utf-8') as f:
+                    flat_vulnerabilities = json.load(f)
+                self.logger.info(f"Loaded {len(flat_vulnerabilities)} vulnerabilities from flat JSON file")
+                return flat_vulnerabilities
+            except Exception as e:
+                self.logger.warning(f"Error loading flat JSON file {nvd_json_file}: {e}")
+                # Continue to directory-based approach
         
         # Get all year directories and sort them in reverse order (newest first)
         year_dirs = [d for d in os.listdir(nvd_base) if d.startswith('CVE-') and os.path.isdir(os.path.join(nvd_base, d))]
