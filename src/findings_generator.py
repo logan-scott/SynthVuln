@@ -172,7 +172,8 @@ class FindingsGenerator:
                             'open_ports': [int(p) for p in row['open_ports'].split(';')] if row['open_ports'] else [],
                             'endpoint_security_installed': row['endpoint_security_installed'].lower() == 'true',
                             'local_firewall_active': row['local_firewall_active'].lower() == 'true',
-                            'location': row['location']
+                            'location': row['location'],
+                            'cloud_provider': row.get('cloud_provider') if row.get('cloud_provider') else None
                         }
                         assets.append(asset)
                     except (KeyError, ValueError) as e:
@@ -223,7 +224,8 @@ class FindingsGenerator:
                                 'open_ports': [int(p) for p in row['open_ports'].split(';')] if row['open_ports'] else [],
                                 'endpoint_security_installed': bool(row['endpoint_security_installed']),
                                 'local_firewall_active': bool(row['local_firewall_active']),
-                                'location': row['location']
+                                'location': row['location'],
+                                'cloud_provider': row.get('cloud_provider') if row.get('cloud_provider') and row.get('cloud_provider') != 'NULL' else None
                             }
                             assets.append(asset)
                         except (KeyError, ValueError, TypeError) as e:
@@ -258,13 +260,17 @@ class FindingsGenerator:
                                 'user_accounts': values[3].split(';') if values[3] else [],
                                 'privileged_user_accounts': values[4].split(';') if values[4] else [],
                                 'type': values[5],
-                                'internet_exposed': values[6].lower() == 'true',
-                                'public_ip': values[7] if values[7] != 'NULL' else None,
-                                'internal_ip': values[8],
-                                'open_ports': [int(p) for p in values[9].split(';')] if values[9] else [],
-                                'endpoint_security_installed': values[10].lower() == 'true',
-                                'local_firewall_active': values[11].lower() == 'true',
-                                'location': values[12]
+                                'os_family': values[6] if len(values) > 16 else 'Unknown',
+                                'os_version': values[7] if len(values) > 16 else 'Unknown',
+                                'lifecycle_stage': values[8] if len(values) > 16 else 'Production',
+                                'internet_exposed': values[9 if len(values) > 16 else 6].lower() == 'true',
+                                'public_ip': values[10 if len(values) > 16 else 7] if values[10 if len(values) > 16 else 7] != 'NULL' else None,
+                                'internal_ip': values[11 if len(values) > 16 else 8],
+                                'open_ports': [int(p) for p in values[12 if len(values) > 16 else 9].split(';')] if values[12 if len(values) > 16 else 9] else [],
+                                'endpoint_security_installed': values[13 if len(values) > 16 else 10].lower() == 'true',
+                                'local_firewall_active': values[14 if len(values) > 16 else 11].lower() == 'true',
+                                'location': values[15 if len(values) > 16 else 12],
+                                'cloud_provider': values[16] if len(values) > 16 and values[16] != 'NULL' else None
                             }
                             assets.append(asset)
                         else:

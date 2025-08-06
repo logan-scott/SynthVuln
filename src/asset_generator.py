@@ -78,8 +78,14 @@ class AssetGenerator:
         # Load security features configuration
         self.security_features = self.config.get('security_features', {})
         
-        # Load internal network configuration
+        # Load internal networks configuration
         self.internal_networks = self.config.get('internal_networks', {})
+        
+        # Load public IP configuration
+        self.public_ip_config = self.config.get('public_ip_config', {})
+        
+        # Load cloud service provider configuration
+        self.cloud_service_providers = self.config.get('cloud_service_providers', {})
         
         # Load performance configuration
         perf_config = self.config.get('performance_config', {})
@@ -247,6 +253,58 @@ class AssetGenerator:
         # Randomly select an IP range and generate an IP from it
         selected_range = random.choice(ip_ranges)
         return self.generate_ip_from_cidr(selected_range)
+    
+    def select_public_ip(self, location):
+        """
+        Select a public IP address based on location.
+        
+        Args:
+            location (str): The location of the asset
+            
+        Returns:
+            str: Public IP address
+        """
+        company_locations = self.public_ip_config.get('company_locations', [])
+        
+        if location in company_locations:
+            # Use company public IP blocks for on-premises devices
+            company_blocks = self.public_ip_config.get('company_blocks', [])
+            if company_blocks:
+                selected_block = random.choice(company_blocks)
+                return self.generate_ip_from_cidr(selected_block)
+        
+        # Use random public IP for remote/cloud devices
+        return f"203.0.{random.randint(1,255)}.{random.randint(1,255)}"
+    
+    def select_cloud_provider(self):
+        """
+        Select a cloud service provider based on configured distribution weights.
+        
+        Returns:
+            str: Selected cloud service provider name, or None if no providers configured
+        """
+        providers_config = self.cloud_service_providers.get('providers', [])
+        distribution_config = self.cloud_service_providers.get('distribution', {})
+        
+        if not providers_config or not distribution_config:
+            # Fallback to default providers if no configuration
+            default_providers = ['AWS', 'Azure', 'GCP']
+            return random.choice(default_providers)
+        
+        # Filter distribution to only include configured providers
+        valid_providers = [p for p in providers_config if p in distribution_config]
+        
+        if not valid_providers:
+            # Fallback if no valid providers found
+            return random.choice(providers_config) if providers_config else 'AWS'
+        
+        # Create weighted choices based on distribution
+        weights = [distribution_config[provider] for provider in valid_providers]
+        
+        # Use random.choices for weighted selection
+        selected_provider = random.choices(valid_providers, weights=weights, k=1)[0]
+        
+        return selected_provider
 
     def generate_single_asset(self) -> Dict[str, Any]:
         """
@@ -303,7 +361,7 @@ class AssetGenerator:
         asset = {
             "uuid": str(uuid.uuid4()),
             "domain_name": f"domain{random.randint(1,5)}.local",
-            "hostname": f"{asset_type.lower().replace(' ', '-')}-{random.randint(1000,9999)}",
+            "hostname": f"{location.lower().replace(' ', '-')}-{asset_type.lower().replace(' ', '-')}-{random.randint(1000,9999)}",
             "user_accounts": self.generate_user_accounts(),
             "privileged_user_accounts": self.generate_user_accounts(is_privileged=True),
             "type": asset_type,
@@ -311,12 +369,13 @@ class AssetGenerator:
             "os_version": os_info['os_version'],
             "lifecycle_stage": lifecycle_stage,
             "internet_exposed": is_internet_exposed,
-            "public_ip": f"203.0.{random.randint(1,255)}.{random.randint(1,255)}" if is_internet_exposed else None,
+            "public_ip": self.select_public_ip(location) if is_internet_exposed else None,
             "internal_ip": self.select_internal_ip(asset_type),
             "open_ports": open_ports,
             "endpoint_security_installed": self.supports_endpoint_security(asset_type) and random.random() < self.get_endpoint_security_probability(),
             "local_firewall_active": self.supports_local_firewall(asset_type) and random.random() < self.get_local_firewall_probability(),
-            "location": location
+            "location": location,
+            "cloud_provider": self.select_cloud_provider() if location == "Cloud" else None
         }
         return asset
 
@@ -435,7 +494,8 @@ class AssetGenerator:
                         'open_ports': ';'.join(map(str, asset['open_ports'])),
                         'endpoint_security_installed': asset['endpoint_security_installed'],
                         'local_firewall_active': asset['local_firewall_active'],
-                        'location': asset['location']
+                        'location': asset['location'],
+                        'cloud_provider': asset['cloud_provider'] or ''
                     }
                     flattened_assets.append(flattened)
                 except KeyError as e:
@@ -501,7 +561,8 @@ class AssetGenerator:
                 f.write("    open_ports TEXT,\n")
                 f.write("    endpoint_security_installed BOOLEAN,\n")
                 f.write("    local_firewall_active BOOLEAN,\n")
-                f.write("    location VARCHAR(100)\n")
+                f.write("    location VARCHAR(100),\n")
+                f.write("    cloud_provider VARCHAR(50)\n")
                 f.write(");\n\n")
                 
                 # Write INSERT statements
@@ -522,6 +583,7 @@ class AssetGenerator:
                         lifecycle_stage = str(asset['lifecycle_stage']).replace("'", "''")
                         location = str(asset['location']).replace("'", "''")
                         internal_ip = str(asset['internal_ip']).replace("'", "''")
+                        cloud_provider = str(asset['cloud_provider'] or '').replace("'", "''")
                         
                         f.write(f"INSERT INTO assets VALUES (\n")
                         f.write(f"    '{asset['uuid']}',\n")
@@ -539,7 +601,8 @@ class AssetGenerator:
                         f.write(f"    '{open_ports}',\n")
                         f.write(f"    {str(asset['endpoint_security_installed']).lower()},\n")
                         f.write(f"    {str(asset['local_firewall_active']).lower()},\n")
-                        f.write(f"    '{location}'\n")
+                        f.write(f"    '{location}',\n")
+                        f.write(f"    {'NULL' if not cloud_provider else f"'{cloud_provider}'"}\n")
                         f.write(");\n")
                     except KeyError as e:
                         self.logger.warning(f"Asset {i} missing required field {e}, skipping")

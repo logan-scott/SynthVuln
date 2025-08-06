@@ -602,6 +602,53 @@ internal_networks:
       - DNS server
       - Identity server
       - Proxy server
+
+# Public IP configuration - defines how public IPs are assigned
+public_ip_config:
+  # Company public IP blocks for on-premises devices
+  company_blocks:
+    - "203.0.113.0/24"     # Company block 1 (RFC 5737 documentation range)
+    - "198.51.100.0/24"    # Company block 2 (RFC 5737 documentation range)
+    - "192.0.2.0/24"       # Company block 3 (RFC 5737 documentation range)
+  
+  # Locations that use company public IP blocks
+  company_locations:
+    - "Internal"
+    - "Data center"
+  
+  # Locations that use random public IPs
+  remote_locations:
+    - "Remote"
+    - "Cloud"
+
+# Cloud service provider configuration - defines available providers and distribution
+cloud_service_providers:
+  # Available cloud service providers
+  providers:
+    - "AWS"                    # Amazon Web Services
+    - "Azure"                  # Microsoft Azure
+    - "GCP"                    # Google Cloud Platform
+    - "Oracle Cloud"           # Oracle Cloud Infrastructure
+    - "IBM Cloud"              # IBM Cloud
+    - "Alibaba Cloud"          # Alibaba Cloud
+    - "DigitalOcean"           # DigitalOcean
+    - "Linode"                 # Linode
+    - "Vultr"                  # Vultr
+    - "Hetzner"                # Hetzner Cloud
+  
+  # Distribution weights for cloud service providers (percentages)
+  # These can be customized based on company preferences
+  distribution:
+    "AWS": 40.0                # Amazon Web Services - market leader
+    "Azure": 30.0              # Microsoft Azure - enterprise favorite
+    "GCP": 15.0                # Google Cloud Platform - growing presence
+    "Oracle Cloud": 5.0        # Oracle Cloud Infrastructure
+    "IBM Cloud": 3.0           # IBM Cloud
+    "Alibaba Cloud": 2.0       # Alibaba Cloud
+    "DigitalOcean": 2.0        # DigitalOcean - developer friendly
+    "Linode": 1.5              # Linode
+    "Vultr": 1.0               # Vultr
+    "Hetzner": 0.5             # Hetzner Cloud
  
 # Asset to port mapping - defines typical open ports for each asset type
 asset_port_mapping:
