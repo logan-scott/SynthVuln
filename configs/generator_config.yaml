@@ -889,6 +889,12 @@ findings_config:
   
   detection_probability: 0.7   # 70% chance a vulnerability is detected
   false_positive_rate: 0.1     # 10% chance of false positive findings
+  
+  # Vulnerability reintroduction configuration
+  reintroduction:
+    probability: 0.15          # 15% chance a vulnerability is reintroduced after remediation
+    min_gap_days: 30           # Minimum days between absolute_first_detected and first_detected
+    max_gap_days: 365          # Maximum days between absolute_first_detected and first_detected
 
 # Performance and caching configuration
 performance_config:

@@ -64,12 +64,17 @@ class FindingsGenerator:
         
         # Load performance configuration
         perf_config = self.config.get('performance_config', {})
-        self.cache_duration = perf_config.get('cache_duration_seconds', 3600)  # Was hardcoded as 3600
-        self.max_directory_depth = perf_config.get('max_directory_scan_depth', 10)  # Was hardcoded as 10
-        self.progress_interval = perf_config.get('progress_report_interval', 100)  # Was hardcoded as 100
-        self.max_unique_vulns = findings_config.get('max_unique_vulns', 5000)  # From findings config
+        self.cache_duration = perf_config.get('cache_duration_seconds', 3600)
+        self.max_directory_depth = perf_config.get('max_directory_scan_depth', 10)
+        self.progress_interval = perf_config.get('progress_report_interval', 100)
+        self.max_unique_vulns = findings_config.get('max_unique_vulns', 5000)
         self.vuln_batch_size = perf_config.get('vuln_processing_batch_size', 500)
         self.max_retries = perf_config.get('max_retries', 3)
+        
+        # Load vulnerability reintroduction configuration
+        self.reintroduction_config = findings_config.get('reintroduction', {
+            'probability': 0.15, 'min_gap_days': 30, 'max_gap_days': 365
+        })
         
     def initialize_for_generation(self, asset_file: str = '', num_findings: int = 10, bias_recent: bool = True):
         """Initialize generator for findings generation with specific parameters.
@@ -664,11 +669,6 @@ class FindingsGenerator:
                 finding = {
                     "finding_id": str(uuid.uuid4()),
                     "asset_uuid": asset["uuid"],
-                    "timestamp": (base_timestamp + timedelta(
-                        days=random.randint(0, 30),
-                        hours=random.randint(0, 23),
-                        minutes=random.randint(0, 59)
-                    )).isoformat(),
                     "detection_tool": random.choice(self.detection_tools),
                     "is_false_positive": is_false_positive
                 }
@@ -681,6 +681,19 @@ class FindingsGenerator:
                         "base_score": cve["base_score"],
                         "description": cve.get("description", "")
                     })
+                    
+                    # Extract CVE year from CVE ID (format: CVE-YYYY-NNNN)
+                    cve_year = 2020  # Default fallback year
+                    try:
+                        if cve["id"].startswith("CVE-"):
+                            year_part = cve["id"].split("-")[1]
+                            cve_year = int(year_part)
+                    except (IndexError, ValueError):
+                        pass  # Use default year if parsing fails
+                    
+                    # Generate the three timestamps
+                    timestamps = self._generate_timestamps(cve_year, base_timestamp)
+                    finding.update(timestamps)
                 else:
                     # Fallback if no vulnerabilities available
                     finding.update({
@@ -689,11 +702,83 @@ class FindingsGenerator:
                         "base_score": 0.0,
                         "description": "Sample vulnerability"
                     })
+                    
+                    # Generate timestamps with default year
+                    timestamps = self._generate_timestamps(2020, base_timestamp)
+                    finding.update(timestamps)
 
                 findings.append(finding)
 
         self.logger.info(f"Findings generation completed: {len(findings)}/{num_findings} items - Generated {len(findings)} findings")
         return findings
+    
+    def _generate_timestamps(self, cve_year: int, base_timestamp: datetime) -> Dict[str, str]:
+        """Generate the three timestamp fields for a vulnerability finding.
+        
+        Args:
+            cve_year: The year the CVE was published
+            base_timestamp: Base timestamp for generation
+            
+        Returns:
+            Dictionary containing absolute_first_detected, first_detected, and last_detected timestamps
+        """
+        # Ensure absolute_first_detected is never before CVE year
+        cve_start_date = datetime(cve_year, 1, 1)
+        earliest_detection = max(cve_start_date, base_timestamp - timedelta(days=365))
+        
+        # Generate absolute_first_detected (when vulnerability was very first detected)
+        absolute_first_detected = earliest_detection + timedelta(
+            days=random.randint(0, 180),  # Within 6 months of CVE or base timestamp
+            hours=random.randint(0, 23),
+            minutes=random.randint(0, 59)
+        )
+        
+        # Determine if this is a reintroduced vulnerability
+        is_reintroduced = random.random() < self.reintroduction_config['probability']
+        
+        if is_reintroduced:
+            # Generate first_detected after a gap (vulnerability was remediated and reintroduced)
+            gap_days = random.randint(
+                self.reintroduction_config['min_gap_days'],
+                self.reintroduction_config['max_gap_days']
+            )
+            first_detected = absolute_first_detected + timedelta(
+                days=gap_days,
+                hours=random.randint(0, 23),
+                minutes=random.randint(0, 59)
+            )
+        else:
+            # first_detected is the same as absolute_first_detected
+            first_detected = absolute_first_detected
+        
+        # Generate last_detected (very high likelihood of being today's date)
+        # 90% chance it's today (same day as base_timestamp), 10% chance it's within last 3 days
+        if random.random() < 0.9:
+            # Today's detection (same day as base_timestamp)
+            days_ago = 0
+        else:
+            # Recent detection (within last 3 days)
+            days_ago = random.randint(1, 3)
+            
+        last_detected = base_timestamp - timedelta(
+            days=days_ago,
+            hours=random.randint(0, 23),
+            minutes=random.randint(0, 59)
+        )
+        
+        # Ensure last_detected is not before first_detected
+        if last_detected < first_detected:
+            last_detected = first_detected + timedelta(
+                days=random.randint(1, 30),
+                hours=random.randint(0, 23),
+                minutes=random.randint(0, 59)
+            )
+        
+        return {
+            "absolute_first_detected": absolute_first_detected.isoformat(),
+            "first_detected": first_detected.isoformat(),
+            "last_detected": last_detected.isoformat()
+        }
 
     def save_findings(self, findings: List[Dict[str, Any]], output_file: str = '', output_format: str = 'json'):
         """Save findings to file in specified format.
@@ -756,7 +841,9 @@ class FindingsGenerator:
             flattened = {
                 'finding_id': finding['finding_id'],
                 'asset_uuid': finding['asset_uuid'],
-                'timestamp': finding['timestamp'],
+                'absolute_first_detected': finding.get('absolute_first_detected', ''),
+                'first_detected': finding.get('first_detected', ''),
+                'last_detected': finding.get('last_detected', ''),
                 'detection_tool': finding['detection_tool'],
                 'is_false_positive': finding['is_false_positive'],
                 'cve_id': finding.get('cve_id', ''),
@@ -789,7 +876,9 @@ class FindingsGenerator:
             f.write("CREATE TABLE IF NOT EXISTS findings (\n")
             f.write("    finding_id VARCHAR(36) PRIMARY KEY,\n")
             f.write("    asset_uuid VARCHAR(36),\n")
-            f.write("    timestamp DATETIME,\n")
+            f.write("    absolute_first_detected DATETIME,\n")
+            f.write("    first_detected DATETIME,\n")
+            f.write("    last_detected DATETIME,\n")
             f.write("    detection_tool VARCHAR(100),\n")
             f.write("    is_false_positive BOOLEAN,\n")
             f.write("    cve_id VARCHAR(20),\n")
@@ -806,7 +895,9 @@ class FindingsGenerator:
                 f.write(f"INSERT INTO findings VALUES (\n")
                 f.write(f"    '{finding['finding_id']}',\n")
                 f.write(f"    '{finding['asset_uuid']}',\n")
-                f.write(f"    '{finding['timestamp']}',\n")
+                f.write(f"    '{finding.get('absolute_first_detected', '')}',\n")
+                f.write(f"    '{finding.get('first_detected', '')}',\n")
+                f.write(f"    '{finding.get('last_detected', '')}',\n")
                 f.write(f"    '{finding['detection_tool']}',\n")
                 f.write(f"    {str(finding['is_false_positive']).lower()},\n")
                 f.write(f"    '{finding.get('cve_id', '')}',\n")
