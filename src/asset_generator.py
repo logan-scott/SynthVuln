@@ -1,5 +1,6 @@
 import argparse
 import csv
+import ipaddress
 import json
 import random
 import uuid
@@ -73,6 +74,12 @@ class AssetGenerator:
         # Load lifecycle stage configuration
         self.lifecycle_stages = self.config.get('lifecycle_stages', [])
         self.lifecycle_stage_distribution = self.config.get('lifecycle_stage_distribution', {})
+        
+        # Load security features configuration
+        self.security_features = self.config.get('security_features', {})
+        
+        # Load internal network configuration
+        self.internal_networks = self.config.get('internal_networks', {})
         
         # Load performance configuration
         perf_config = self.config.get('performance_config', {})
@@ -160,6 +167,86 @@ class AssetGenerator:
         selected_stage = random.choices(stages, weights=weights, k=1)[0]
         
         return selected_stage
+    
+    def supports_endpoint_security(self, asset_type):
+        """Check if an asset type supports endpoint security."""
+        endpoint_config = self.security_features.get('endpoint_security', {})
+        applicable_types = endpoint_config.get('applicable_asset_types', [])
+        return asset_type in applicable_types
+    
+    def supports_local_firewall(self, asset_type):
+        """Check if an asset type supports local firewall."""
+        firewall_config = self.security_features.get('local_firewall', {})
+        applicable_types = firewall_config.get('applicable_asset_types', [])
+        return asset_type in applicable_types
+    
+    def get_endpoint_security_probability(self):
+        """Get the probability for endpoint security installation."""
+        endpoint_config = self.security_features.get('endpoint_security', {})
+        return endpoint_config.get('default_probability', 0.8)
+    
+    def get_local_firewall_probability(self):
+        """Get the probability for local firewall activation."""
+        firewall_config = self.security_features.get('local_firewall', {})
+        return firewall_config.get('default_probability', 0.7)
+    
+    def select_internal_network(self, asset_type):
+        """Select an appropriate internal network for the given asset type."""
+        if not self.internal_networks:
+            return None
+        
+        # Find networks that support this asset type
+        applicable_networks = []
+        for network_name, network_config in self.internal_networks.items():
+            applicable_types = network_config.get('applicable_asset_types', [])
+            if asset_type in applicable_types:
+                applicable_networks.append((network_name, network_config))
+        
+        if not applicable_networks:
+            # Fallback to corporate network if available, otherwise first network
+            if 'corporate' in self.internal_networks:
+                return ('corporate', self.internal_networks['corporate'])
+            elif self.internal_networks:
+                first_network = list(self.internal_networks.items())[0]
+                return first_network
+            return None
+        
+        # Randomly select from applicable networks
+        return random.choice(applicable_networks)
+    
+    def generate_ip_from_cidr(self, cidr_range):
+        """Generate a random IP address from a CIDR range."""
+        try:
+            network = ipaddress.IPv4Network(cidr_range, strict=False)
+            # Get all host addresses (excluding network and broadcast)
+            hosts = list(network.hosts())
+            if hosts:
+                return str(random.choice(hosts))
+            else:
+                # For /32 or very small networks, use the network address
+                return str(network.network_address)
+        except (ipaddress.AddressValueError, ValueError):
+            # Fallback to default range if CIDR parsing fails
+            return f"192.168.{random.randint(1,255)}.{random.randint(1,255)}"
+    
+    def select_internal_ip(self, asset_type):
+        """Select an internal IP address based on asset type and network configuration."""
+        network_info = self.select_internal_network(asset_type)
+        
+        if not network_info:
+            # Fallback to default IP generation
+            return f"192.168.{random.randint(1,255)}.{random.randint(1,255)}"
+        
+        network_name, network_config = network_info
+        ip_ranges = network_config.get('ip_ranges', [])
+        
+        if not ip_ranges:
+            # Fallback to default IP generation
+            return f"192.168.{random.randint(1,255)}.{random.randint(1,255)}"
+        
+        # Randomly select an IP range and generate an IP from it
+        selected_range = random.choice(ip_ranges)
+        return self.generate_ip_from_cidr(selected_range)
 
     def generate_single_asset(self) -> Dict[str, Any]:
         """
@@ -225,10 +312,10 @@ class AssetGenerator:
             "lifecycle_stage": lifecycle_stage,
             "internet_exposed": is_internet_exposed,
             "public_ip": f"203.0.{random.randint(1,255)}.{random.randint(1,255)}" if is_internet_exposed else None,
-            "internal_ip": f"192.168.{random.randint(1,255)}.{random.randint(1,255)}",
+            "internal_ip": self.select_internal_ip(asset_type),
             "open_ports": open_ports,
-            "endpoint_security_installed": random.random() < 0.8,  # 80% chance of having security
-            "local_firewall_active": random.random() < 0.7,  # 70% chance of active firewall
+            "endpoint_security_installed": self.supports_endpoint_security(asset_type) and random.random() < self.get_endpoint_security_probability(),
+            "local_firewall_active": self.supports_local_firewall(asset_type) and random.random() < self.get_local_firewall_probability(),
             "location": location
         }
         return asset

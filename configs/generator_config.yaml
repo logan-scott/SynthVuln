@@ -477,6 +477,132 @@ lifecycle_stage_distribution:
   Pilot: 2.0                # Proof-of-concept deployments
   Backup: 1.0               # Standby/disaster recovery
 
+# Security feature configuration - defines which asset types support security features
+security_features:
+  # Endpoint security (antivirus, EDR) - only relevant for endpoint devices
+  endpoint_security:
+    default_probability: 0.8  # 80% chance for applicable asset types
+    applicable_asset_types:
+      - Desktop
+      - Laptop
+      - Workstation
+      - Server
+      - Webserver
+      - Storage server
+      - Virtualization server
+      - Virtual machine
+      - Database server
+      - Application server
+      - Mail server
+  
+  # Local firewall - relevant for most computing devices but not network infrastructure
+  local_firewall:
+    default_probability: 0.7  # 70% chance for applicable asset types
+    applicable_asset_types:
+      - Desktop
+      - Laptop
+      - Workstation
+      - Mobile device
+      - Server
+      - Webserver
+      - Storage server
+      - Virtualization server
+      - Virtual machine
+      - Database server
+      - Application server
+      - Mail server
+      - Proxy server
+      - DNS server
+      - DHCP server
+      - Identity server
+      - VPN server
+
+# Internal network configuration - defines network segments and asset type mappings
+internal_networks:
+  # Corporate/Office Network - Main business network
+  corporate:
+    ip_ranges:
+      - "192.168.1.0/24"     # Main office subnet
+      - "192.168.10.0/24"    # Department subnet
+      - "10.0.1.0/24"        # Extended corporate range
+    applicable_asset_types:
+      - Desktop
+      - Laptop
+      - Workstation
+      - Server
+      - Webserver
+      - Storage server
+      - Database server
+      - Application server
+      - Mail server
+      - Virtual machine
+      - Virtualization server
+      - Printer
+  
+  # DMZ Network - Demilitarized zone for public-facing services
+  dmz:
+    ip_ranges:
+      - "172.16.1.0/24"      # DMZ subnet
+      - "172.16.10.0/24"     # Extended DMZ
+    applicable_asset_types:
+      - Webserver
+      - Mail server
+      - DNS server
+      - Proxy server
+      - Load balancer
+      - VPN server
+  
+  # Wireless Network - Guest and employee wireless
+  wireless:
+    ip_ranges:
+      - "192.168.100.0/24"   # Employee wireless
+      - "192.168.200.0/24"   # Guest wireless
+    applicable_asset_types:
+      - Laptop
+      - Mobile device
+      - Tablet
+      - IoT device
+  
+  # VPN Network - Remote access network
+  vpn:
+    ip_ranges:
+      - "10.8.0.0/24"        # VPN client range
+      - "10.9.0.0/24"        # Secondary VPN range
+    applicable_asset_types:
+      - Laptop
+      - Mobile device
+      - Desktop
+      - Workstation
+  
+  # Data Center Network - Server infrastructure
+  datacenter:
+    ip_ranges:
+      - "10.10.0.0/24"       # Production servers
+      - "10.20.0.0/24"       # Development servers
+      - "10.30.0.0/24"       # Storage network
+    applicable_asset_types:
+      - Server
+      - Database server
+      - Storage server
+      - Virtualization server
+      - Virtual machine
+      - Container
+      - Kubernetes cluster
+  
+  # Management Network - Infrastructure management
+  management:
+    ip_ranges:
+      - "192.168.99.0/24"    # Management subnet
+    applicable_asset_types:
+      - Network firewall
+      - Router
+      - Switch
+      - Load balancer
+      - DHCP server
+      - DNS server
+      - Identity server
+      - Proxy server
+ 
 # Asset to port mapping - defines typical open ports for each asset type
 asset_port_mapping:
   Desktop:                  # End-user workstations
