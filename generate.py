@@ -27,6 +27,7 @@ sys.path.insert(0, src_path)
 
 from asset_generator import AssetGenerator
 from findings_generator import FindingsGenerator
+from integrations.nvd import main as nvd
 
 
 class SynthVulnGenerator:
@@ -48,19 +49,22 @@ class SynthVulnGenerator:
         print("1. Asset Generator only")
         print("2. Findings Generator only")
         print("3. Both generators (recommended)")
+        print("4. NVD Integration (fetch vulnerability data)")
+        print("5. NVD Integration + Both generators")
         
         while True:
             try:
-                choice = input("\nEnter your choice (1-3): ").strip()
-                if choice in ['1', '2', '3']:
+                choice = input("\nEnter your choice (1-5): ").strip()
+                if choice in ['1', '2', '3', '4', '5']:
                     break
-                print("Please enter 1, 2, or 3.")
+                print("Please enter 1, 2, 3, 4, or 5.")
             except KeyboardInterrupt:
                 print("\nOperation cancelled.")
                 return
         
-        run_assets = choice in ['1', '3']
-        run_findings = choice in ['2', '3']
+        run_nvd = choice in ['4', '5']
+        run_assets = choice in ['1', '3', '5']
+        run_findings = choice in ['2', '3', '5']
         
         # Asset generator configuration
         asset_count = 10
@@ -194,6 +198,11 @@ class SynthVulnGenerator:
         print("Starting Generation...")
         print("=" * 60)
         
+        # Run NVD integration if requested
+        if run_nvd:
+            print("\nRunning NVD Integration...")
+            self._run_nvd_integration()
+        
         asset_output_file = None
         if run_assets:
             print("\nRunning Asset Generator...")
@@ -231,6 +240,11 @@ class SynthVulnGenerator:
         print("\n" + "=" * 60)
         print("SynthVuln Generator - Run Mode")
         print("=" * 60)
+        
+        # Run NVD integration if requested
+        if hasattr(args, 'nvd_integration') and args.nvd_integration:
+            print("\nRunning NVD Integration...")
+            self._run_nvd_integration()
         
         asset_output_file = None
         
@@ -335,6 +349,22 @@ class SynthVulnGenerator:
         except Exception as e:
             print(f"Error running findings generator: {e}")
             return None
+    
+    def _run_nvd_integration(self) -> bool:
+        """Run the NVD integration to fetch vulnerability data."""
+        try:
+            # Import the NVD integration module
+            nvd_path = os.path.join(os.path.dirname(__file__), 'integrations')
+            sys.path.insert(0, nvd_path)
+            
+            # Run the NVD integration
+            nvd()
+            print("NVD integration completed successfully!")
+            return True
+            
+        except Exception as e:
+            print(f"Error running NVD integration: {e}")
+            return False
 
 
 def main():
@@ -362,6 +392,8 @@ Examples:
   python generate.py --run --count-assets 1000 --count-findings 10000 --output-format json
   python generate.py --run --count-assets 500 --output-assets data/assets.csv --output-format csv
   python generate.py --run --count-findings 5000 --input-assets data/assets.json --output-findings data/findings.sql --output-format sql
+  python generate.py --run --nvd-integration
+  python generate.py --run --nvd-integration --count-assets 100 --count-findings 500
 """
     )
     
@@ -387,6 +419,8 @@ Examples:
                        help='Output format for generated files (default: json)')
     parser.add_argument('--no-bias-recent', action='store_true',
                        help='Disable bias towards recent CVEs in findings generation')
+    parser.add_argument('--nvd-integration', action='store_true',
+                       help='Run NVD integration to fetch vulnerability data')
     
     args = parser.parse_args()
     
@@ -397,8 +431,8 @@ Examples:
             generator.default_mode()
         elif args.run:
             # Validate run mode arguments
-            if not args.count_assets and not args.count_findings:
-                print("Error: Run mode requires at least --count-assets or --count-findings")
+            if not args.count_assets and not args.count_findings and not getattr(args, 'nvd_integration', False):
+                print("Error: Run mode requires at least --count-assets, --count-findings, or --nvd-integration")
                 parser.print_help()
                 sys.exit(1)
             generator.run_mode(args)
