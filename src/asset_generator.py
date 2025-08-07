@@ -306,6 +306,104 @@ class AssetGenerator:
         
         return selected_provider
 
+    def _generate_installed_software(self, asset_type: str, os_family: str) -> List[Dict[str, str]]:
+        """
+        Generate a list of installed software based on asset type and OS family.
+        
+        Args:
+            asset_type (str): The type of asset (Desktop, Server, etc.)
+            os_family (str): The OS family (Windows, Linux, etc.)
+            
+        Returns:
+            List[Dict[str, str]]: List of software dictionaries with name and version
+        """
+        installed_software_config = self.config.get('installed_software', {})
+        software_config = self.config.get('software_config', {})
+        asset_mapping = software_config.get('asset_software_mapping', {})
+        
+        # Get software count configuration
+        count_config = software_config.get('software_count', {'min': 5, 'max': 15})
+        min_count = count_config.get('min', 5)
+        max_count = count_config.get('max', 15)
+        
+        # Get applicable software groups for this asset type
+        applicable_groups = asset_mapping.get(asset_type, [])
+        
+        # Collect all available software from applicable groups
+        all_available_software = []
+        
+        for group in applicable_groups:
+            if isinstance(group, list):
+                # Handle nested lists in the mapping
+                for subgroup in group:
+                    group_software = installed_software_config.get(subgroup, [])
+                    all_available_software.extend(group_software)
+            else:
+                group_software = installed_software_config.get(group, [])
+                all_available_software.extend(group_software)
+        
+        # Add OS-specific software based on os_family
+        if os_family.lower() == 'linux':
+            linux_software = installed_software_config.get('linux_common', [])
+            all_available_software.extend(linux_software)
+        elif os_family.lower() == 'windows':
+            # Determine if it's server or workstation based on asset type
+            if any(keyword in asset_type.lower() for keyword in ['server', 'database', 'web', 'mail', 'dns', 'dhcp']):
+                windows_software = installed_software_config.get('windows_server', [])
+            else:
+                windows_software = installed_software_config.get('windows_workstation', [])
+            all_available_software.extend(windows_software)
+        elif os_family.lower() == 'macos':
+            macos_software = installed_software_config.get('macos_common', [])
+            all_available_software.extend(macos_software)
+        
+        # Add virtualization software if applicable
+        if 'virtual' in asset_type.lower() or 'vm' in asset_type.lower():
+            vm_software = installed_software_config.get('virtual_machine_additions', [])
+            all_available_software.extend(vm_software)
+        
+        # Add container software if applicable
+        if 'container' in asset_type.lower() or 'kubernetes' in asset_type.lower():
+            container_software = installed_software_config.get('container_software', [])
+            all_available_software.extend(container_software)
+        
+        # Remove duplicates while preserving order
+        seen = set()
+        unique_software = []
+        for software in all_available_software:
+            if software not in seen:
+                seen.add(software)
+                unique_software.append(software)
+        
+        if not unique_software:
+            # Fallback software if no configuration
+            fallback = [
+                {"name": "Generic Application", "version": "1.0.0"},
+                {"name": "System Utility", "version": "2.1.0"},
+                {"name": "Network Tool", "version": "3.2.1"}
+            ]
+            return fallback
+        
+        # Select random subset of software
+        num_software = min(random.randint(min_count, max_count), len(unique_software))
+        selected_software_names = random.sample(unique_software, num_software)
+        
+        # Convert to dictionaries with name and version
+        selected_software = []
+        for software_name in selected_software_names:
+            # Generate a realistic version number
+            major = random.randint(1, 10)
+            minor = random.randint(0, 20)
+            patch = random.randint(0, 50)
+            version = f"{major}.{minor}.{patch}"
+            
+            selected_software.append({
+                "name": software_name,
+                "version": version
+            })
+        
+        return selected_software
+
     def generate_single_asset(self) -> Dict[str, Any]:
         """
         Generate a single synthetic asset with realistic properties.
@@ -358,6 +456,9 @@ class AssetGenerator:
         num_ports = min(random.randint(2, 4), len(valid_ports))
         open_ports = random.sample(valid_ports, num_ports)
         
+        # Generate installed software based on asset type and OS
+        installed_software = self._generate_installed_software(asset_type, os_info['os_family'])
+        
         asset = {
             "uuid": str(uuid.uuid4()),
             "domain_name": f"domain{random.randint(1,5)}.local",
@@ -375,7 +476,8 @@ class AssetGenerator:
             "endpoint_security_installed": self.supports_endpoint_security(asset_type) and random.random() < self.get_endpoint_security_probability(),
             "local_firewall_active": self.supports_local_firewall(asset_type) and random.random() < self.get_local_firewall_probability(),
             "location": location,
-            "cloud_provider": self.select_cloud_provider() if location == "Cloud" else None
+            "cloud_provider": self.select_cloud_provider() if location == "Cloud" else None,
+            "installed_software": installed_software
         }
         return asset
 
@@ -495,7 +597,8 @@ class AssetGenerator:
                         'endpoint_security_installed': asset['endpoint_security_installed'],
                         'local_firewall_active': asset['local_firewall_active'],
                         'location': asset['location'],
-                        'cloud_provider': asset['cloud_provider'] or ''
+                        'cloud_provider': asset['cloud_provider'] or '',
+                        'installed_software': ';'.join([f"{sw['name']}:{sw['version']}" for sw in asset['installed_software']])
                     }
                     flattened_assets.append(flattened)
                 except KeyError as e:
@@ -562,7 +665,8 @@ class AssetGenerator:
                 f.write("    endpoint_security_installed BOOLEAN,\n")
                 f.write("    local_firewall_active BOOLEAN,\n")
                 f.write("    location VARCHAR(100),\n")
-                f.write("    cloud_provider VARCHAR(50)\n")
+                f.write("    cloud_provider VARCHAR(50),\n")
+                f.write("    installed_software TEXT\n")
                 f.write(");\n\n")
                 
                 # Write INSERT statements
@@ -584,6 +688,7 @@ class AssetGenerator:
                         location = str(asset['location']).replace("'", "''")
                         internal_ip = str(asset['internal_ip']).replace("'", "''")
                         cloud_provider = str(asset['cloud_provider'] or '').replace("'", "''")
+                        installed_software = ';'.join([f"{sw['name']}:{sw['version']}" for sw in asset['installed_software']]).replace("'", "''")
                         
                         f.write(f"INSERT INTO assets VALUES (\n")
                         f.write(f"    '{asset['uuid']}',\n")
@@ -602,7 +707,8 @@ class AssetGenerator:
                         f.write(f"    {str(asset['endpoint_security_installed']).lower()},\n")
                         f.write(f"    {str(asset['local_firewall_active']).lower()},\n")
                         f.write(f"    '{location}',\n")
-                        f.write(f"    {'NULL' if not cloud_provider else f"'{cloud_provider}'"}\n")
+                        f.write(f"    {'NULL' if not cloud_provider else f"'{cloud_provider}'"},\n")
+                        f.write(f"    '{installed_software}'\n")
                         f.write(");\n")
                     except KeyError as e:
                         self.logger.warning(f"Asset {i} missing required field {e}, skipping")
