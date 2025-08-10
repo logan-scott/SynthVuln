@@ -49,22 +49,32 @@ class SynthVulnGenerator:
         print("1. Asset Generator only")
         print("2. Findings Generator only")
         print("3. Both generators (recommended)")
-        print("4. NVD Integration (fetch vulnerability data)")
-        print("5. NVD Integration + Both generators")
+        print("4. NVD Integration - CVEs only")
+        print("5. NVD Integration - CPEs only")
+        print("6. NVD Integration - Both CVEs and CPEs")
+        print("7. NVD Integration (CVEs + CPEs) + Both generators")
         
         while True:
             try:
-                choice = input("\nEnter your choice (1-5): ").strip()
-                if choice in ['1', '2', '3', '4', '5']:
+                choice = input("\nEnter your choice (1-7): ").strip()
+                if choice in ['1', '2', '3', '4', '5', '6', '7']:
                     break
-                print("Please enter 1, 2, 3, 4, or 5.")
+                print("Please enter 1, 2, 3, 4, 5, 6, or 7.")
             except KeyboardInterrupt:
                 print("\nOperation cancelled.")
                 return
         
-        run_nvd = choice in ['4', '5']
-        run_assets = choice in ['1', '3', '5']
-        run_findings = choice in ['2', '3', '5']
+        run_nvd = choice in ['4', '5', '6', '7']
+        nvd_collection_type = 'both'  # default
+        if choice == '4':
+            nvd_collection_type = 'cves'
+        elif choice == '5':
+            nvd_collection_type = 'cpes'
+        elif choice in ['6', '7']:
+            nvd_collection_type = 'both'
+            
+        run_assets = choice in ['1', '3', '7']
+        run_findings = choice in ['2', '3', '7']
         
         # Asset generator configuration
         asset_count = 10
@@ -200,8 +210,8 @@ class SynthVulnGenerator:
         
         # Run NVD integration if requested
         if run_nvd:
-            print("\nRunning NVD Integration...")
-            self._run_nvd_integration()
+            print(f"\nRunning NVD Integration ({nvd_collection_type.upper()})...")
+            self._run_nvd_integration(nvd_collection_type)
         
         asset_output_file = None
         if run_assets:
@@ -243,8 +253,9 @@ class SynthVulnGenerator:
         
         # Run NVD integration if requested
         if hasattr(args, 'nvd_integration') and args.nvd_integration:
-            print("\nRunning NVD Integration...")
-            self._run_nvd_integration()
+            collection_type = getattr(args, 'nvd_collection_type', 'both')
+            print(f"\nRunning NVD Integration ({collection_type.upper()})...")
+            self._run_nvd_integration(collection_type)
         
         asset_output_file = None
         
@@ -350,15 +361,19 @@ class SynthVulnGenerator:
             print(f"Error running findings generator: {e}")
             return None
     
-    def _run_nvd_integration(self) -> bool:
-        """Run the NVD integration to fetch vulnerability data."""
+    def _run_nvd_integration(self, collection_type: str = 'both') -> bool:
+        """Run the NVD integration to fetch vulnerability and/or CPE data.
+        
+        Args:
+            collection_type (str): Type of data to collect - 'cves', 'cpes', or 'both'
+        """
         try:
             # Import the NVD integration module
             nvd_path = os.path.join(os.path.dirname(__file__), 'integrations')
             sys.path.insert(0, nvd_path)
             
-            # Run the NVD integration
-            nvd()
+            # Run the NVD integration with specified collection type
+            nvd(collection_type)
             print("NVD integration completed successfully!")
             return True
             
@@ -421,6 +436,8 @@ Examples:
                        help='Disable bias towards recent CVEs in findings generation')
     parser.add_argument('--nvd-integration', action='store_true',
                        help='Run NVD integration to fetch vulnerability data')
+    parser.add_argument('--nvd-collection-type', type=str, choices=['cves', 'cpes', 'both'], default='both',
+                       help='Type of NVD data to collect: cves, cpes, or both (default: both)')
     
     args = parser.parse_args()
     
