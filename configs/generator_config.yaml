@@ -5,6 +5,11 @@ default_paths:
   nvd_data_dir: data/inputs/
   cpe_mapping_config: configs/cpe_mapping_config.json
 
+# Random seed for reproducible output generation (optional)
+# Set to null or remove to use random generation
+# Set to an integer value (e.g., 42) for consistent, reproducible results
+random_seed: null
+
 # Asset type definitions - comprehensive list covering enterprise environments
 asset_types:
 - Desktop                 # End-user workstations

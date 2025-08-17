@@ -54,6 +54,14 @@ class AssetGenerator:
         for asset generation, including asset types, locations, port mappings,
         and distribution weights.
         """
+        # Set random seed for reproducible output if specified
+        random_seed = self.config.get('random_seed')
+        if random_seed is not None:
+            random.seed(random_seed)
+            self.logger.info(f"Random seed set to {random_seed} for reproducible output")
+        else:
+            self.logger.info("No random seed specified, using random generation")
+        
         self.default_paths = self.config.get('default_paths', {})
 
         # Load asset types, locations, and common ports

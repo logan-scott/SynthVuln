@@ -46,6 +46,14 @@ class FindingsGenerator:
         Loads configuration for detection tools, severity weights, recent bias settings,
         vulnerability count ranges, and performance settings from the configuration file.
         """
+        # Set random seed for reproducible output if specified
+        random_seed = self.config.get('random_seed')
+        if random_seed is not None:
+            random.seed(random_seed)
+            self.logger.info(f"Random seed set to {random_seed} for reproducible output")
+        else:
+            self.logger.info("No random seed specified, using random generation")
+        
         self.default_paths = self.config.get('default_paths', {})
         
         # Load findings-specific configuration
