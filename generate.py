@@ -307,8 +307,9 @@ class SynthVulnGenerator:
                 else:
                     output_file = default_output
             
-            # Ensure output directory exists
-            os.makedirs(os.path.dirname(output_file), exist_ok=True)
+            output_dir = os.path.dirname(output_file)
+            if output_dir:
+                os.makedirs(output_dir, exist_ok=True)
             
             assets = self.asset_generator.generate_assets(count, output_file, output_format)
             print(f"Generated {len(assets)} assets and saved to {output_file} ({output_format.upper()} format)")
@@ -343,8 +344,9 @@ class SynthVulnGenerator:
                 else:
                     output_file = default_output
             
-            # Ensure output directory exists
-            os.makedirs(os.path.dirname(output_file), exist_ok=True)
+            output_dir = os.path.dirname(output_file)
+            if output_dir:
+                os.makedirs(output_dir, exist_ok=True)
             
             findings = self.findings_generator.generate_findings(
                 num_findings=count,

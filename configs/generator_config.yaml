@@ -3,6 +3,7 @@ default_paths:
   asset_output: data/outputs/assets.json
   findings_output: data/outputs/findings.json
   nvd_data_dir: data/inputs/
+  cpe_mapping_config: configs/cpe_mapping_config.json
 
 # Asset type definitions - comprehensive list covering enterprise environments
 asset_types:
@@ -30,6 +31,33 @@ asset_types:
 - DHCP server             # IP address assignment
 - Identity server         # Authentication/authorization
 - VPN server              # Remote access gateways
+
+# Asset type to general category mapping for CPE-based software generation
+asset_general_type_mapping:
+  Desktop: workstation
+  Laptop: workstation
+  Mobile device: mobile
+  Workstation: workstation
+  Server: server
+  Webserver: server
+  Storage server: server
+  Virtualization server: server
+  Virtual machine: server
+  Container: server
+  Kubernetes cluster: server
+  Serverless: server
+  Database server: server
+  Application server: server
+  Mail server: server
+  Firewall: network
+  Load balancer: network
+  Router: network
+  Switch: network
+  Proxy server: server
+  DNS server: server
+  DHCP server: server
+  Identity server: server
+  VPN server: server
 
 # Location definitions - typical enterprise network zones
 locations:
@@ -896,953 +924,1280 @@ findings_config:
     min_gap_days: 30           # Minimum days between absolute_first_detected and first_detected
     max_gap_days: 365          # Maximum days between absolute_first_detected and first_detected
 
-# Installed software configuration based on asset type and OS
-# Data derived from top_50_techs_by_asset_type.csv analysis
-# Enhanced with additional enterprise software categories
-installed_software:
-  # Software mapping by computer group patterns
-  # Each group maps to relevant applications from the CSV dataset
-  
-  # Linux-based systems (servers, containers, VMs)
-  linux_common:
-    - bash
-    - sed
-    - findutils
-    - cpio
-    - tar
-    - diffutils
-    - gzip
-    - tzdata
-    - ca-certificates
-    - ncurses-base
-    - e2fsprogs
-    - sudo
-    - openssl
-    - grep
-    - kmod
-    - groff-base
-    - coreutils
-    - openssh-server
-    - passwd
-    - util-linux
-    - wget
-    - dbus
-    - dmidecode
-    - gdisk
-    - file
-    - logrotate
-    - less
-    - info
-    - rsyslog
-    - parted
-    - man-db
-    - psmisc
-    - irqbalance
-    - binutils
-    - gawk
-    - bc
-    - bzip2
-    - kbd
-    - vim-common
-    - grub2-common
-    - os-prober
-    - hwdata
-    - systemd
-    - hostname
-    - pciutils
-    - ethtool
-    - python3-setuptools
-    - ed
-    - nano
-    - unzip
-    - curl
-    - git
-    - htop
-    - screen
-    - tmux
-    - rsync
-    - iptables
-    - fail2ban
-    - cron
-    - logwatch
-    - ntp
-    - chrony
-    - net-tools
-    - tcpdump
-    - wireshark
-    - nmap
-    - awk
-    - perl
-    - python3
-    - python3-pip
-    - zip
-    - 7zip
-    - tree
-    - lsof
-    - strace
-    - netstat
-    - ss
-    - iotop
-    - iftop
-    - nethogs
-    - vnstat
-  
-  # macOS systems (workstations, laptops)
-  macos_common:
-    - PressAndHold
-    - eaptlstrust
-    - TransliterationIM
-    - identityservicesd
-    - KoreanIM
-    - ClassroomStudentMenuExtra
-    - TextInputMenuAgent
-    - ShortcutDroplet
-    - TextInputSwitcher
-    - ShortcutsActions
-    - Shortcuts Events
-    - AquaAppearanceHelper
-    - Keychain Circle Notification
-    - TrackpadIM
-    - ScriptMonitor
-    - KeyboardSetupAssistant
-    - ARDAgent
-    - KeyboardAccessAgent
-    - Automator Application Stub
-    - KerberosMenuExtra
-    - TYIM
-    - Siri
-    - ScreenSaverEngine
-    - TMHelperAgent
-    - ScreenReaderUIServer
-    - screencaptureui
-    - SCIM
-    - ContinuityCaptureOnboardingUI
-    - UASharedPasteboardProgressUI
-    - Database Events
-    - AppSSOAgent
-    - UIKitSystem
-    - AddPrinter
-    - AXVisualSupportAgent
-    - AutomationModeUI
-    - AddressBookManager
-    - universalAccessAuthWarn
-    - UniversalAccessControl
-    - UnmountAssistantAgent
-    - EmojiFunctionRowIM
-    - UserNotificationCenter
-    - AskPermissionUI
-    - AutoFillPanelService
-    - AppleSpell
-    - AddressBookSourceSync
-    - AddressBookSync
-    - CinematicFramingOnboardingUI
-    - ThermalTrap
-    - TCIM
-    - CIMFindInputCodeTool
-  
-  # Windows Server applications
-  windows_server:
-    - UniversalForwarder
-    - Microsoft SQL Server 2019
-    - Datadog Agent
-    - Microsoft Visual C++ 2013 Redistributable
-    - Server BG Info
-    - VMware Tools
-    - Microsoft Visual C++ 2013 Redistributable (x86)
-    - Microsoft Visual C++ 2015-2022 Redistributable (x86)
-    - Microsoft Visual C++ 2015-2022 Redistributable (x64)
-    - Microsoft ODBC Driver 13 for SQL Server
-    - Microsoft SQL Server 2019 Setup
-    - Microsoft SQL Server 2019 T-SQL Language Service
-    - Rubrik Backup Service
-    - Microsoft Edge
-    - Microsoft Defender for Endpoint
-    - Microsoft Visual C++ 2015-2019 Redistributable (x86)
-    - Microsoft Visual C++ 2008 Redistributable - x64
-    - Microsoft Visual C++ 2008 Redistributable - x86
-    - Microsoft Visual C++ 2008 Redistributable - x86
-    - Microsoft Visual C++ 2015-2019 Redistributable (x64)
-    - Microsoft SQL Server 2012 Native Client
-    - Microsoft ODBC Driver 17 for SQL Server
-    - Microsoft ODBC Driver 17 for SQL Server
-    - SRM Windows Collector
-    - Microsoft Visual C++ 2010  x64 Redistributable
-    - Microsoft Visual C++ 2010  x86 Redistributable
-    - Microsoft Monitoring Agent
-    - Microsoft Visual C++ 2008 Redistributable - x86 9.0.30729.17
-    - Microsoft Visual C++ 2008 Redistributable - x64 9.0.30729.17
-    - Npcap OEM
-    - Microsoft Visual C++ 2010  x86 Redistributable
-    - Microsoft OLE DB Driver for SQL Server
-    - Microsoft Visual C++ 2010  x86 Redistributable - 10.0.40219
-    - Dependency Agent
-    - Microsoft Help Viewer 2.3
-    - Microsoft Visual C++ 2012 Redistributable (x64)
-    - Microsoft Visual C++ 2012 Redistributable (x86)
-    - Microsoft Edge WebView2 Runtime
-    - Azure Data Studio
-    - IIS URL Rewrite Module 2
-    - IBM SA Client
-    - Microsoft Visual Studio Tools for Applications 2017
-    - Google Chrome
-    - Datadog .NET Tracer 64-bit
-    - Microsoft Visual Studio Tools for Applications 2019
-    - Microsoft Visual C++ 2013 Redistributable (x64)
-    - Microsoft Visual C++ 2013 Redistributable (x86)
-    - Nutanix VirtIO
-    - Notepad++ (64-bit x64)
-    - Microsoft Visual Studio Installer
-    - Microsoft Visual C++ 2013 Redistributable (x86)
-    - Microsoft ODBC Driver 13 for SQL Server
-    - Microsoft Visual C++ 2013 Redistributable
-  
-  # Windows Workstation applications
-  windows_workstation:
-    - Netskope Client
-    - Cisco Secure Client
-    - Cisco AnyConnect VPN Client
-    - Microsoft Edge
-    - Microsoft 365 Apps
-    - Microsoft OneDrive
-    - Google Chrome
-    - SetChromeDefault
-    - Microsoft Teams Meeting Add-in for Microsoft Office
-    - DisplayLink Graphics
-    - Microsoft Azure Information Protection
-    - Mersive Solstice
-    - Microsoft Intune Management Extension
-    - Microsoft Visual C++ 2010  x86 Redistributable - 10.0.40219
-    - Microsoft Visual C++ 2008 Redistributable - x86 9.0.30729.6161
-    - Microsoft Visual C++ 2008 Redistributable - x64 9.0.30729.6161
-    - Microsoft Windows Desktop Runtime - 8.0.18 (x64)
-    - Microsoft Visual C++ 2015-2022 Redistributable (x64) - 14.44.35211
-    - Microsoft Visual C++ 2015-2022 Redistributable (x86) - 14.44.35211
-    - Microsoft Update Health Tools
-    - HR-Direct-64
-    - Microsoft Visual C++ 2010  x64 Redistributable - 10.0.40219
-    - Windows Autopatch Client Broker
-    - Microsoft Windows Desktop Runtime - 6.0.36 (x64)
-    - Adobe Acrobat
-    - Microsoft Windows Desktop Runtime - 9.0.7 (x64)
-    - Microsoft Visual C++ 2013 Redistributable (x86) - 12.0.40664
-    - Microsoft Visual C++ 2013 Redistributable (x64) - 12.0.40664
-    - Microsoft Visual C++ 2012 Redistributable (x86) - 11.0.61030
-    - Microsoft Visual C++ 2012 Redistributable (x64) - 11.0.61030
-    - Appdata_Backup
-    - Printer Installer Client
-    - Cisco Webex Meetings
-    - BeyondTrust Jump Client
-    - Microsoft 365 Apps
-    - Microsoft Visual C++ 2013 Redistributable (x64) - 12.0.40660
-    - Microsoft Teams classic
-    - Webex
-    - Realtek Audio Driver
-    - Microsoft Windows Desktop Runtime - 5.0.17 (x64)
-    - Microsoft Windows Desktop Runtime - 8.0.18 (x86)
-    - Dell Core Services
-    - Local Administrator Password Solution
-    - Adobe Creative Cloud
-    - Cisco Secure Client - Secure Firewall Posture
-    - Zoom Workplace
-    - Dell SupportAssist OS Recovery Plugin for Dell Update
-  
-  # Virtual Machine specific software (inherits from base OS + virtualization tools)
-  virtual_machine_additions:
-    - VMware Tools
-    - VirtualBox Guest Additions
-    - Hyper-V Integration Services
-    - Citrix XenServer Tools
-    - Proxmox VE Guest Agent
-  
-  # Container-specific software
-  container_software:
-    - Docker Engine
-    - containerd
-    - runc
-    - Kubernetes
-    - kubectl
-    - crictl
-    - podman
-    - buildah
-    - skopeo
-    - helm
-    - docker-compose
-    - minikube
-    - kind
-    - istio
-    - linkerd
-    - prometheus
-    - grafana
-    - jaeger
-    - fluentd
-    - elasticsearch
-    - kibana
-    - consul
-    - vault
-    - etcd
-    - calico
-    - flannel
-    - weave
-    - cilium
-  
-  # Database server software
-  database_software:
-    - MySQL Server
-    - PostgreSQL
-    - MongoDB
-    - Redis
-    - MariaDB
-    - Oracle Database
-    - Microsoft SQL Server
-    - SQLite
-    - Cassandra
-    - CouchDB
-    - InfluxDB
-    - TimescaleDB
-    - Neo4j
-    - Amazon RDS
-    - Azure SQL Database
-    - Google Cloud SQL
-    - Elasticsearch
-    - Apache Solr
-    - pgAdmin
-    - phpMyAdmin
-    - MongoDB Compass
-    - DBeaver
-    - Navicat
-    - MySQL Workbench
-    - pgBouncer
-    - HAProxy
-    - ProxySQL
-    - Percona Toolkit
-    - pt-query-digest
-    - mysqldump
-    - pg_dump
-    - mongodump
-    - redis-cli
-  
-  # Web server software
-  webserver_software:
-    - Apache HTTP Server
-    - Nginx
-    - Microsoft IIS
-    - Lighttpd
-    - Caddy
-    - Tomcat
-    - Jetty
-    - Node.js
-    - Express.js
-    - PM2
-    - Forever
-    - Gunicorn
-    - uWSGI
-    - Passenger
-    - Puma
-    - Unicorn
-    - PHP-FPM
-    - mod_php
-    - mod_ssl
-    - mod_rewrite
-    - mod_security
-    - Varnish Cache
-    - Memcached
-    - Redis Cache
-    - Cloudflare
-    - Let's Encrypt
-    - Certbot
-    - OpenSSL
-    - HAProxy
-    - Traefik
-    - Envoy Proxy
-  
-  # Security software
-  # Security software - comprehensive endpoint protection and monitoring tools
-  # Aligned with security_features.endpoint_security configuration
-  security_software:
-    # Enterprise EDR/XDR Solutions
-    - CrowdStrike Falcon
-    - SentinelOne
-    - Carbon Black
-    - Microsoft Defender for Endpoint
-    - Palo Alto Cortex XDR
-    - Cisco Secure Endpoint
-    - FireEye Endpoint Security
-    - Trend Micro Vision One
-    - Symantec Endpoint Detection and Response
-    - McAfee MVISION EDR
-    - Fortinet FortiEDR
-    - Check Point Harmony Endpoint
-    - Bitdefender GravityZone
-    - Kaspersky Endpoint Security
-    - ESET PROTECT
-    - Sophos Intercept X
-    - Cybereason Defense Platform
-    - Elastic Security
-    - VMware Carbon Black Cloud
-    - Rapid7 InsightIDR
-    
-    # Traditional Antivirus/Endpoint Protection
-    - Symantec Endpoint Protection
-    - McAfee ePO
-    - Trend Micro Apex One
-    - Kaspersky Security Center
-    - Bitdefender Endpoint Security
-    - Windows Defender
-    - ESET NOD32
-    - Sophos Central
-    - Malwarebytes Endpoint Protection
-    - Avast Business Antivirus
-    - AVG Business Edition
-    - F-Secure Business Suite
-    - Webroot SecureAnywhere
-    - Norton Security
-    - Avira Antivirus
-    
-    # Security Information and Event Management (SIEM)
-    - Splunk Universal Forwarder
-    - Splunk Enterprise Security
-    - IBM QRadar
-    - ArcSight ESM
-    - LogRhythm SIEM
-    - AlienVault OSSIM
-    - Elastic Security (SIEM)
-    - Microsoft Sentinel
-    - Sumo Logic
-    - Chronicle Security
-    
-    # Endpoint Monitoring and Logging
-    - Elastic Agent
-    - Filebeat
-    - Metricbeat
-    - Winlogbeat
-    - Auditbeat
-    - Packetbeat
-    - Heartbeat
-    - Osquery
-    - Wazuh Agent
-    - OSSEC
-    - Sysmon
-    - NXLog
-    - Fluentd
-    - Logstash
-    - Telegraf
-    - collectd
-    
-    # File Integrity Monitoring
-    - Tripwire
-    - AIDE
-    - Samhain
-    - OSSEC FIM
-    - Wazuh FIM
-    - Qualys FIM
-    - Rapid7 InsightIDR FIM
-    
-    # Anti-malware and Rootkit Detection
-    - Chkrootkit
-    - rkhunter
-    - ClamAV
-    - Maldet
-    - YARA
-    - Volatility
-    
-    # Network Security and IDS/IPS
-    - Snort
-    - Suricata
-    - Zeek
-    - pfSense
-    - OPNsense
-    - Security Onion
-    - SELKS
-    
-    # Host-based Firewalls
-    - IPTables
-    - UFW
-    - Windows Firewall
-    - Windows Defender Firewall
-    - pfSense
-    - iptables-persistent
-    - firewalld
-    - CSF (ConfigServer Security & Firewall)
-    
-    # Access Control and Hardening
-    - AppArmor
-    - SELinux
-    - Grsecurity
-    - RSBAC
-    - TOMOYO Linux
-    - Windows AppLocker
-    - Software Restriction Policies
-    
-    # Intrusion Prevention and Blocking
-    - Fail2Ban
-    - DenyHosts
-    - SSHGuard
-    - BruteBlock
-    - IPBan
-    - WinIPBan
-    
-    # Security Assessment and Compliance
-    - Lynis
-    - OpenSCAP
-    - SCAP Security Guide
-    - CIS-CAT
-    - Nessus Agent
-    - Qualys VMDR
-    - Rapid7 InsightVM
-    - Tenable.io
-    - OpenVAS
-    - Greenbone Security Assistant
-    
-    # Privileged Access Management
-    - CyberArk Endpoint Privilege Manager
-    - BeyondTrust Privilege Management
-    - Thycotic Secret Server
-    - HashiCorp Vault
-    - AWS Secrets Manager
-    - Azure Key Vault
-    
-    # Data Loss Prevention
-    - Symantec DLP
-    - Forcepoint DLP
-    - Microsoft Purview DLP
-    - Digital Guardian
-    - Code42 Incydr
-    - Varonis DatAdvantage
-    
-    # Mobile Device Management (for mobile endpoints)
-    - Microsoft Intune
-    - VMware Workspace ONE
-    - Citrix Endpoint Management
-    - IBM MaaS360
-    - BlackBerry UEM
-    - SOTI MobiControl
-    - ManageEngine Mobile Device Manager Plus
-    - Jamf Pro
-    
-    # Zero Trust and Identity Protection
-    - Microsoft Azure AD
-    - Okta
-    - Ping Identity
-    - CyberArk Identity
-    - SailPoint IdentityIQ
-    - ForgeRock Identity Platform
-    - Auth0
-    - Duo Security
-    - RSA SecurID
-    - Yubico Authenticator
-  
-  # Development tools
-  development_software:
-    - Visual Studio Code
-    - Visual Studio
-    - IntelliJ IDEA
-    - Eclipse
-    - PyCharm
-    - WebStorm
-    - PhpStorm
-    - RubyMine
-    - GoLand
-    - CLion
-    - DataGrip
-    - Rider
-    - Android Studio
-    - Xcode
-    - Sublime Text
-    - Atom
-    - Notepad++
-    - Vim
-    - Emacs
-    - Git
-    - GitHub Desktop
-    - GitLab
-    - Bitbucket
-    - Subversion
-    - Mercurial
-    - Perforce
-    - Team Foundation Server
-    - Jenkins
-    - GitLab CI
-    - GitHub Actions
-    - Azure DevOps
-    - TeamCity
-    - Bamboo
-    - CircleCI
-    - Travis CI
-    - Ansible
-    - Terraform
-    - Puppet
-    - Chef
-    - SaltStack
-    - Vagrant
-    - VirtualBox
-    - VMware Workstation
-    - Parallels Desktop
-    - Docker Desktop
-    - Postman
-    - Insomnia
-    - SoapUI
-    - JMeter
-    - LoadRunner
-    - Selenium
-    - Cypress
-    - Jest
-    - Mocha
-    - JUnit
-    - TestNG
-    - NUnit
-    - MSTest
-    - Maven
-    - Gradle
-    - npm
-    - yarn
-    - pip
-    - composer
-    - bundler
-    - cargo
-    - go mod
-    - NuGet
-  
-  # Network and infrastructure software
-  network_software:
-    - Cisco IOS
-    - Juniper JUNOS
-    - Arista EOS
-    - Palo Alto PAN-OS
-    - Fortinet FortiOS
-    - Check Point Gaia
-    - SonicWall SonicOS
-    - pfSense
-    - OPNsense
-    - VyOS
-    - FRRouting
-    - Quagga
-    - BIRD
-    - OpenWrt
-    - DD-WRT
-    - Ubiquiti UniFi
-    - Mikrotik RouterOS
-    - BIND DNS
-    - PowerDNS
-    - Unbound
-    - dnsmasq
-    - ISC DHCP
-    - Kea DHCP
-    - Windows DHCP
-    - FreeRADIUS
-    - Microsoft NPS
-    - Cisco ISE
-    - Aruba ClearPass
-    - OpenVPN
-    - WireGuard
-    - IPsec
-    - StrongSwan
-    - Cisco AnyConnect
-    - Pulse Secure
-    - F5 BIG-IP
-    - HAProxy
-    - Nginx Plus
-    - Citrix NetScaler
-    - Kemp LoadMaster
-    - AWS ELB
-    - Azure Load Balancer
-    - Google Cloud Load Balancer
-  
-  # Monitoring and observability software
-  monitoring_software:
-    - Prometheus
-    - Grafana
-    - Nagios
-    - Zabbix
-    - PRTG
-    - SolarWinds
-    - Datadog Agent
-    - New Relic
-    - AppDynamics
-    - Dynatrace
-    - Splunk
-    - Elastic Stack
-    - Logstash
-    - Fluentd
-    - Telegraf
-    - collectd
-    - StatsD
-    - Jaeger
-    - Zipkin
-    - OpenTelemetry
-    - Sentry
-    - Rollbar
-    - Bugsnag
-    - PagerDuty
-    - OpsGenie
-    - VictorOps
-    - Slack
-    - Microsoft Teams
-    - Mattermost
-    - Rocket.Chat
-    - Discord
-    - Webhook
-    - SNMP
-    - WMI
-    - Perfmon
-    - sar
-    - iostat
-    - vmstat
-    - top
-    - htop
-    - atop
-    - iotop
-    - iftop
-    - nethogs
-    - nload
-    - bmon
-    - vnstat
-    - ntopng
-    - Cacti
-    - LibreNMS
-    - Observium
-    - MRTG
-    - RRDtool
-  
-  # Backup and storage software
-  backup_software:
-    - Veeam Backup & Replication
-    - Commvault
-    - Veritas NetBackup
-    - IBM Spectrum Protect
-    - Acronis Cyber Backup
-    - Rubrik
-    - Cohesity
-    - Druva
-    - Carbonite
-    - Backblaze
-    - AWS Backup
-    - Azure Backup
-    - Google Cloud Backup
-    - rsync
-    - rsnapshot
-    - Bacula
-    - Amanda
-    - Duplicity
-    - BorgBackup
-    - Restic
-    - rclone
-    - Syncthing
-    - Nextcloud
-    - ownCloud
-    - Seafile
-    - Dropbox
-    - Google Drive
-    - OneDrive
-    - Box
-    - pCloud
-    - MEGA
-    - SpiderOak
-    - Tresorit
-    - Sync.com
-    - iDrive
-    - Mozy
-    - CrashPlan
-    - Time Machine
-    - Windows Backup
-    - File History
-    - System Restore
-    - Shadow Copy
-    - LVM Snapshots
-    - ZFS Snapshots
-    - Btrfs Snapshots
-  
-  # Mobile device management software
-  mobile_software:
-    - Microsoft Intune
-    - VMware Workspace ONE
-    - Citrix Endpoint Management
-    - IBM MaaS360
-    - BlackBerry UEM
-    - SOTI MobiControl
-    - ManageEngine Mobile Device Manager Plus
-    - Jamf Pro
-    - Apple Configurator
-    - Samsung Knox
-    - Google Workspace
-    - Microsoft 365
-    - Slack
-    - Zoom
-    - Microsoft Teams
-    - Skype for Business
-    - WebEx
-    - GoToMeeting
-    - BlueJeans
-    - Jitsi Meet
-    - Signal
-    - WhatsApp Business
-    - Telegram
-    - Viber
-    - WeChat Work
-    - DingTalk
-    - Workplace from Meta
-    - Yammer
-    - Chatter
-    - Jive
-    - Confluence Mobile
-    - Jira Mobile
-    - Trello
-    - Asana
-    - Monday.com
-    - Notion
-    - Evernote
-    - OneNote
-    - Google Keep
-    - Apple Notes
-    - Dropbox
-    - Google Drive
-    - OneDrive
-    - Box
-    - iCloud
-    - LastPass
-    - 1Password
-    - Bitwarden
-    - Dashlane
-    - Keeper
-    - RoboForm
-    - Authenticator
-    - Google Authenticator
-    - Microsoft Authenticator
-    - Authy
-    - RSA SecurID
-    - Duo Mobile
-    - Okta Verify
-    - Ping Identity
 
-# Software selection configuration
-software_config:
-  # Number of software packages to install per asset
-  software_count:
-    min: 5                     # Minimum software packages per asset
-    max: 25                    # Maximum software packages per asset
+
+
+# CPE (Common Platform Enumeration) configuration
+cpe_config:
+  # Enable CPE-based asset generation and vulnerability matching
+  enabled: true
+  
+  # CPE selection and filtering
+  use_cpe_pools: true              # Use predefined asset type pools from CPE mapping
+  min_confidence_threshold: 0.15   # Minimum confidence score for CPE selection
+  prefer_versioned_cpes: true      # Prefer CPEs with specific versions over generic ones
+  
+  # Asset generation from CPE data
+  cpe_based_asset_generation:
+    enabled: true
+    max_cpes_per_asset_type: 50    # Maximum CPEs to consider per asset type
+    version_distribution:
+      latest: 0.3                  # 30% use latest/current versions
+      recent: 0.4                  # 40% use recent versions (1-2 years old)
+      older: 0.3                   # 30% use older versions (2+ years old)
     
-  # Probability weights for different software categories
-  category_weights:
-    base_os: 0.8               # 80% chance to include base OS software
-    productivity: 0.6          # 60% chance for productivity software
-    security: 0.7              # 70% chance for security software
-    development: 0.3           # 30% chance for development tools
-    virtualization: 0.4        # 40% chance for virtualization tools (if applicable)
+  # Vulnerability matching using CPE data
+  cpe_based_vulnerability_matching:
+    enabled: true
+    exact_match_weight: 1.0        # Weight for exact CPE matches
+    partial_match_weight: 0.7      # Weight for partial CPE matches (vendor/product)
+    version_range_matching: true   # Enable version range matching
     
-  # Asset type to software group mapping
-  asset_software_mapping:
-    Desktop:
-      - windows_workstation
-      - macos_common
-      - security_software
-    Laptop:
-      - windows_workstation
-      - macos_common
-      - security_software
-      - mobile_software
-    Workstation:
-      - windows_workstation
-      - macos_common
-      - linux_common
-      - development_software
-      - security_software
-    Server:
-      - linux_common
-      - windows_server
-      - monitoring_software
-      - security_software
-      - network_software
-      - database_software
-      - development_software
-    Webserver:
-      - linux_common
-      - windows_server
-      - webserver_software
-      - monitoring_software
-      - security_software
-    Storage server:
-      - linux_common
-      - windows_server
-      - backup_software
-      - monitoring_software
-    Virtualization server:
-      - linux_common
-      - windows_server
-      - vm_software
-      - monitoring_software
-    Virtual machine:
-      - linux_common
-      - windows_server
-      - windows_workstation
-      - vm_software
-    Container:
-      - linux_common
-      - container_software
-      - monitoring_software
-    Kubernetes cluster:
-      - linux_common
-      - container_software
-      - monitoring_software
-    Database server:
-      - linux_common
-      - windows_server
-      - database_software
-      - monitoring_software
-      - backup_software
-    Application server:
-      - linux_common
-      - windows_server
-      - webserver_software
-      - monitoring_software
-    Mail server:
-      - linux_common
-      - windows_server
-      - monitoring_software
-      - security_software
-    Proxy server:
-      - linux_common
-      - windows_server
-      - network_software
-      - security_software
-    DNS server:
-      - linux_common
-      - windows_server
-      - network_software
-      - monitoring_software
-    DHCP server:
-      - linux_common
-      - windows_server
-      - network_software
-      - monitoring_software
-    Identity server:
-      - linux_common
-      - windows_server
-      - security_software
-      - monitoring_software
-    VPN server:
-      - linux_common
-      - windows_server
-      - network_software
-      - security_software
-    Mobile device:
-      - mobile_software
-    Firewall:
-      - linux_common
-      - network_software
-      - security_software
-    Load balancer:
-      - linux_common
-      - network_software
-      - monitoring_software
-    Router:
-      - linux_common
-      - network_software
-    Switch:
-      - linux_common
-      - network_software
-    Serverless:
-      - linux_common
-      - container_software
-      - monitoring_software
+  # Software installation patterns based on CPE data
+  software_installation_patterns:
+    # Probability of installing software from each category
+    os_specific_software: 0.9      # OS-specific software (high probability)
+    server_software: 0.8           # Server-specific software
+    development_tools: 0.6         # Development and programming tools
+    security_software: 0.7         # Security and monitoring tools
+    general_applications: 0.5      # General purpose applications
+    
+    # Number of software packages per asset type
+    software_count_ranges:
+      Server: [10, 25]             # Servers have more software
+      Workstation: [8, 20]        # Workstations have moderate software
+      Desktop: [5, 15]             # Desktops have basic software
+      Mobile device: [3, 10]       # Mobile devices have fewer packages
+      
+# CPE mapper configuration for generating cpe_mapping_config.yaml
+cpe_mapper:
+  input: data/inputs/nvd_cpes.json
+  min_confidence: 0.15          # Lowered from 0.25 to capture more CPEs with moderate confidence
+  sample_limit: 500000          # Increased from 50,000 to process significantly more CPEs
+  
+  # OS family keyword mapping for CPE classification - Enhanced coverage
+  os_family_keywords:
+    linux: 
+      - linux
+      - ubuntu
+      - debian
+      - centos
+      - alpine
+      - redhat
+      - suse
+      - fedora
+      - rhel
+      - opensuse
+      - mint
+      - kali
+      - arch
+      - manjaro
+      - elementary
+      - gentoo
+      - slackware
+      - mageia
+      - pclinuxos
+      - zorin
+      - deepin
+      - parrot
+      - tails
+      - puppy
+      - antergos
+      - endeavouros
+      - garuda
+      - pop
+      - solus
+      - void
+      - nixos
+      - clearlinux
+      - photon
+      - coreos
+      - flatcar
+      - rancher
+      - k3os
+    windows: 
+      - windows
+      - microsoft
+      - win
+      - winnt
+      - win32
+      - win64
+      - msft
+      - windowsnt
+      - winserver
+      - winxp
+      - winvista
+      - win7
+      - win8
+      - win10
+      - win11
+      - server2003
+      - server2008
+      - server2012
+      - server2016
+      - server2019
+      - server2022
+      - windowsce
+      - winmobile
+      - winphone
+    mac: 
+      - mac
+      - darwin
+      - osx
+      - macos
+      - apple
+      - macintosh
+      - leopard
+      - snow_leopard
+      - lion
+      - mountain_lion
+      - mavericks
+      - yosemite
+      - el_capitan
+      - sierra
+      - high_sierra
+      - mojave
+      - catalina
+      - big_sur
+      - monterey
+      - ventura
+      - sonoma
+    unix: 
+      - unix
+      - solaris
+      - aix
+      - hpux
+      - freebsd
+      - openbsd
+      - netbsd
+      - dragonfly
+      - illumos
+      - openindiana
+      - smartos
+      - omnios
+      - trueos
+      - ghostbsd
+      - hardenedbsd
+      - midnightbsd
+      - irix
+      - osf1
+      - tru64
+      - ultrix
+      - xenix
+      - sco
+      - unixware
+      - openserver
+    embedded: 
+      - embedded
+      - firmware
+      - rtos
+      - iot
+      - freertos
+      - vxworks
+      - qnx
+      - threadx
+      - micrium
+      - nucleus
+      - embos
+      - rtems
+      - zephyr
+      - mbed
+      - contiki
+      - tinyos
+      - riot
+      - mynewt
+      - nuttx
+      - chibios
+      - ucosii
+      - ucosiii
+      - safertos
+      - integrity
+      - pikeos
+      - lynxos
+      - ecos
+    mobile: 
+      - mobile
+      - android
+      - ios
+      - iphone
+      - ipad
+      - smartphone
+      - tablet
+      - blackberry
+      - webos
+      - palm
+      - symbian
+      - windowsmobile
+      - windowsphone
+      - bada
+      - tizen
+      - sailfish
+      - firefoxos
+      - ubuntutouch
+      - kaios
+      - harmonyos
+      - wear
+      - watchos
+      - tvos
+      - ipados
+  
+  # System type keyword mapping for CPE classification - Enhanced coverage
+  system_type_keywords:
+    server: 
+      - server
+      - daemon
+      - service
+      - httpd
+      - nginx
+      - apache
+      - database
+      - mysql
+      - postgresql
+      - srv
+      - svc
+      - mongodb
+      - redis
+      - elasticsearch
+      - tomcat
+      - jetty
+      - weblogic
+      - websphere
+      - iis
+      - lighttpd
+      - caddy
+      - traefik
+      - haproxy
+      - squid
+      - varnish
+      - memcached
+      - rabbitmq
+      - kafka
+      - zookeeper
+      - consul
+      - etcd
+      - vault
+      - prometheus
+      - grafana
+      - jenkins
+      - gitlab
+      - nexus
+      - artifactory
+      - sonarqube
+      - jboss
+      - wildfly
+      - glassfish
+      - payara
+      - undertow
+      - netty
+      - vertx
+      - spring
+      - django
+      - flask
+      - rails
+      - express
+      - koa
+      - fastapi
+      - tornado
+      - gunicorn
+      - uwsgi
+      - passenger
+      - puma
+      - unicorn
+      - thin
+      - webrick
+      - mongrel
+      - cherrypy
+      - bottle
+      - falcon
+      - sanic
+      - aiohttp
+      - twisted
+      - gevent
+      - eventlet
+      - celery
+      - rq
+      - sidekiq
+      - delayed_job
+      - resque
+      - bull
+      - agenda
+      - cron
+      - systemd
+      - upstart
+      - supervisor
+      - pm2
+      - forever
+      - nodemon
+      - docker
+      - containerd
+      - podman
+      - kubernetes
+      - openshift
+      - rancher
+      - nomad
+      - mesos
+      - swarm
+      - compose
+    workstation: 
+      - desktop
+      - workstation
+      - client
+      - browser
+      - office
+      - editor
+      - ide
+      - viewer
+      - chrome
+      - firefox
+      - safari
+      - edge
+      - outlook
+      - word
+      - excel
+      - powerpoint
+      - thunderbird
+      - libreoffice
+      - openoffice
+      - calc
+      - writer
+      - impress
+      - draw
+      - base
+      - math
+      - notepad
+      - wordpad
+      - gedit
+      - nano
+      - vim
+      - emacs
+      - sublime
+      - atom
+      - vscode
+      - intellij
+      - eclipse
+      - netbeans
+      - pycharm
+      - webstorm
+      - phpstorm
+      - rubymine
+      - clion
+      - datagrip
+      - rider
+      - goland
+      - appcode
+      - xcode
+      - visual_studio
+      - code_blocks
+      - dev_cpp
+      - qtcreator
+      - kdevelop
+      - anjuta
+      - monodevelop
+      - xamarin
+      - unity
+      - unreal
+      - blender
+      - maya
+      - 3dsmax
+      - autocad
+      - solidworks
+      - catia
+      - inventor
+      - fusion360
+      - sketchup
+      - rhino
+      - cinema4d
+      - houdini
+      - zbrush
+      - substance
+      - photoshop
+      - illustrator
+      - indesign
+      - premiere
+      - after_effects
+      - lightroom
+      - acrobat
+      - reader
+      - gimp
+      - inkscape
+      - krita
+      - darktable
+      - rawtherapee
+      - audacity
+      - reaper
+      - cubase
+      - logic
+      - protools
+      - ableton
+      - fl_studio
+      - reason
+      - studio_one
+      - garageband
+      - vlc
+      - mpc
+      - kmplayer
+      - potplayer
+      - winamp
+      - foobar2000
+      - spotify
+      - itunes
+      - musicbee
+      - clementine
+      - rhythmbox
+      - banshee
+      - amarok
+      - audacious
+      - deadbeef
+      - cmus
+      - mpd
+      - ncmpcpp
+      - moc
+      - cplay
+      - herrie
+      - pianobar
+      - pandora
+      - lastfm
+      - scrobbler
+    network: 
+      - router
+      - switch
+      - firewall
+      - proxy
+      - gateway
+      - vpn
+      - dns
+      - dhcp
+      - loadbalancer
+      - cisco
+      - juniper
+      - palo
+      - fortinet
+      - checkpoint
+      - mikrotik
+      - ubiquiti
+      - netgear
+      - linksys
+      - dlink
+      - tplink
+      - asus
+      - belkin
+      - zyxel
+      - huawei
+      - zte
+      - alcatel
+      - nokia
+      - ericsson
+      - aruba
+      - ruckus
+      - meraki
+      - extreme
+      - brocade
+      - dell_networking
+      - hp_networking
+      - avaya
+      - nortel
+      - 3com
+      - enterasys
+      - foundry
+      - riverbed
+      - silver_peak
+      - velocloud
+      - viptela
+      - talari
+      - cloudgenix
+      - aryaka
+      - cato
+      - zscaler
+      - cloudflare
+      - akamai
+      - fastly
+      - imperva
+      - radware
+      - f5
+      - a10
+      - kemp
+      - citrix
+      - barracuda
+      - sonicwall
+      - watchguard
+      - sophos
+      - trend_micro
+      - mcafee
+      - symantec
+      - kaspersky
+      - bitdefender
+      - eset
+      - avast
+      - avg
+      - malwarebytes
+      - webroot
+      - carbonblack
+      - crowdstrike
+      - sentinelone
+      - cylance
+      - endgame
+      - tanium
+      - qualys
+      - rapid7
+      - tenable
+      - greenbone
+      - openvas
+      - nessus
+      - nexpose
+      - metasploit
+      - nmap
+      - wireshark
+      - tcpdump
+      - netcat
+      - ngrep
+      - ettercap
+      - aircrack
+      - kismet
+      - snort
+      - suricata
+      - zeek
+      - bro
+      - ossec
+      - wazuh
+      - elk
+      - splunk
+      - qradar
+      - arcsight
+      - logrhythm
+      - alienvault
+      - phantom
+      - demisto
+      - resilient
+      - threatconnect
+      - misp
+      - opencti
+      - cortex
+      - thehive
+      - yeti
+      - maltego
+      - shodan
+      - censys
+      - virustotal
+      - hybrid_analysis
+      - joe_sandbox
+      - cuckoo
+      - cape
+      - drakvuf
+      - volatility
+      - rekall
+      - autopsy
+      - sleuthkit
+      - foremost
+      - photorec
+      - testdisk
+      - dd_rescue
+      - ddrescue
+      - dc3dd
+      - dcfldd
+      - ewftools
+      - afftools
+      - libewf
+      - libaff
+      - libvmdk
+      - libvhdi
+      - libqcow
+      - libfsntfs
+      - libfshfs
+      - libfsext
+      - libfsfat
+      - libfsxfs
+      - libfswbfs
+      - libfsapfs
+    mobile: 
+      - mobile
+      - android
+      - ios
+      - phone
+      - tablet
+      - smartphone
+      - ipad
+      - iphone
+      - ipod
+      - watch
+      - wearable
+      - smartwatch
+      - fitness
+      - tracker
+      - band
+      - ring
+      - glasses
+      - hololens
+      - oculus
+      - vive
+      - quest
+      - gear
+      - cardboard
+      - daydream
+      - magic_leap
+      - kinect
+      - leap_motion
+      - myo
+      - emotiv
+      - neurosky
+      - tobii
+      - eyex
+      - fove
+      - pupil
+      - smi
+      - gazepoint
+      - mirametrix
+      - seeing_machines
+      - smart_eye
+      - facetime
+      - skype
+      - zoom
+      - teams
+      - webex
+      - gotomeeting
+      - join_me
+      - bluejeans
+      - hangouts
+      - meet
+      - duo
+      - whatsapp
+      - telegram
+      - signal
+      - viber
+      - line
+      - wechat
+      - kakaotalk
+      - snapchat
+      - instagram
+      - facebook
+      - messenger
+      - twitter
+      - linkedin
+      - pinterest
+      - reddit
+      - tumblr
+      - flickr
+      - youtube
+      - vimeo
+      - twitch
+      - periscope
+      - meerkat
+      - blab
+      - houseparty
+      - discord
+      - slack
+      - hipchat
+      - campfire
+      - flowdock
+      - gitter
+      - mattermost
+      - rocket_chat
+      - zulip
+      - riot
+      - element
+      - matrix
+      - irc
+      - xmpp
+      - jabber
+      - gtalk
+      - aim
+      - icq
+      - msn
+      - yahoo_messenger
+      - pidgin
+      - adium
+      - trillian
+      - miranda
+      - psi
+      - gajim
+      - tkabber
+      - mcabber
+      - profanity
+      - weechat
+      - irssi
+      - hexchat
+      - xchat
+      - mirc
+      - kvirc
+      - quassel
+      - konversation
+      - textual
+      - limechat
+      - mutter
+      - irccloud
+      - thelounge
+      - kiwiirc
+      - webchat
+      - freenode
+      - oftc
+      - rizon
+      - quakenet
+      - undernet
+      - dalnet
+      - efnet
+      - ircnet
+      - libera
+    application: 
+      - app
+      - application
+      - software
+      - program
+      - tool
+      - utility
+      - framework
+      - library
+      - plugin
+      - extension
+      - addon
+      - module
+      - component
+      - widget
+      - applet
+      - gadget
+      - control
+      - driver
+      - codec
+      - filter
+      - handler
+      - processor
+      - engine
+      - runtime
+      - interpreter
+      - compiler
+      - assembler
+      - linker
+      - debugger
+      - profiler
+      - analyzer
+      - scanner
+      - parser
+      - generator
+      - converter
+      - transformer
+      - validator
+      - formatter
+      - beautifier
+      - minifier
+      - obfuscator
+      - packer
+      - bundler
+      - builder
+      - deployer
+      - installer
+      - updater
+      - patcher
+      - launcher
+      - manager
+      - monitor
+      - viewer
+      - editor
+      - creator
+      - designer
+      - modeler
+      - simulator
+      - emulator
+      - virtualizer
+      - containerizer
+      - orchestrator
+      - scheduler
+      - dispatcher
+      - broker
+      - gateway
+      - bridge
+      - adapter
+      - wrapper
+      - facade
+      - proxy
+      - stub
+      - mock
+      - fake
+      - dummy
+      - test
+      - benchmark
+      - stress
+      - load
+      - performance
+      - security
+      - vulnerability
+      - penetration
+      - exploit
+      - payload
+      - shellcode
+      - backdoor
+      - trojan
+      - virus
+      - worm
+      - rootkit
+      - keylogger
+      - spyware
+      - adware
+      - malware
+      - ransomware
+      - cryptolocker
+      - cryptowall
+      - locky
+      - wannacry
+      - petya
+      - notpetya
+      - badrabbit
+      - ryuk
+      - maze
+      - sodinokibi
+      - revil
+      - darkside
+      - conti
+      - ragnar
+      - egregor
+      - netwalker
+      - doppelpaymer
+      - clop
+      - avaddon
+      - babuk
+      - blackmatter
+      - lockbit
+      - alphv
+      - blackcat
+      - hive
+      - quantum
+      - karakurt
+      - lapsus
+      - cuba
+      - grief
+      - pysa
+      - mespinoza
+      - mount_locker
+      - xing_locker
+      - prometheus
+      - thanos
+      - nemty
+      - ako
+      - snakehose
+      - ragnarok
+      - darkside
+      - avoslocker
+      - atomsilo
+      - lorenz
+      - pandora
+      - white_rabbit
+      - night_sky
+      - rook
+      - yanluowang
+      - blackbyte
+      - mindware
+      - sabbath
+      - karma
+      - spook
+      - onyx
+      - vice_society
+      - royal
+      - agenda
+      - play
+      - bianlian
+      - medusa
+      - nokoyawa
+      - ransom_cartel
+      - trigona
+      - mallox
+      - money_message
+      - rorschach
+      - akira
+      - cactus
+      - knight
+      - hunters_international
+      - alphvm
+      - blacksuit
+      - cattitude
+      - dark_angels
+      - embargo
+      - hunters
+      - inc_ransom
+      - killsec
+      - knight_ransomware
+      - lockbit_green
+      - monti
+      - noname
+      - phobos
+      - qilin
+      - ransomhub
+      - rhysida
+      - scattered_spider
+      - stormous
+      - trinity
+      - underground
+      - venus
+      - werewolves
+      - xtreme
+      - zeppelin
+  
+  # Tag keyword mapping for additional classification
+  tag_keywords:
+    db:
+      - database
+      - mysql
+      - postgresql
+      - oracle
+      - mongodb
+      - redis
+      - sqlite
+      - db
+      - mariadb
+      - cassandra
+      - couchdb
+      - influxdb
+    webserver:
+      - apache
+      - nginx
+      - httpd
+      - iis
+      - tomcat
+      - jetty
+      - lighttpd
+      - caddy
+      - traefik
+    runtime:
+      - java
+      - python
+      - node
+      - php
+      - ruby
+      - dotnet
+      - perl
+      - go
+      - rust
+      - kotlin
+      - scala
+    crypto:
+      - openssl
+      - crypto
+      - ssl
+      - tls
+      - encryption
+      - cipher
+      - gpg
+      - pgp
+      - bouncycastle
+    library:
+      - lib
+      - library
+      - framework
+      - sdk
+      - api
+      - toolkit
+      - commons
+      - util
+    network:
+      - ftp
+      - ssh
+      - telnet
+      - smtp
+      - pop
+      - imap
+      - snmp
+      - ldap
+      - kerberos
+    media:
+      - player
+      - viewer
+      - editor
+      - codec
+      - multimedia
+      - ffmpeg
+      - imagemagick
+      - vlc
+      - gstreamer
+      - quicktime
+      - realplayer
+      - winamp
+      - audacity
+      - gimp
+      - photoshop
+      - premiere
+    # Enhanced Phase 1: Additional tag categories for better CPE classification
+    security:
+      - antivirus
+      - firewall
+      - scanner
+      - monitor
+      - intrusion
+      - detection
+      - prevention
+      - malware
+      - endpoint
+      - security
+      - defender
+      - kaspersky
+      - norton
+      - mcafee
+      - symantec
+      - trend
+      - bitdefender
+      - avast
+      - avg
+      - eset
+      - sophos
+      - fortinet
+      - checkpoint
+      - paloalto
+      - cisco
+      - juniper
+      - snort
+      - suricata
+      - ossec
+      - wazuh
+      - splunk
+      - elk
+      - siem
+      - soar
+    virtualization:
+      - vmware
+      - virtualbox
+      - hyper
+      - xen
+      - kvm
+      - qemu
+      - docker
+      - container
+      - kubernetes
+      - openshift
+      - rancher
+      - podman
+      - lxc
+      - vagrant
+      - parallels
+      - citrix
+      - xenserver
+      - esxi
+      - vcenter
+      - vcloud
+      - azure
+      - aws
+      - gcp
+      - cloud
+      - hypervisor
+      - virtual
+      - vm
+    development:
+      - ide
+      - editor
+      - compiler
+      - debugger
+      - profiler
+      - build
+      - maven
+      - gradle
+      - ant
+      - make
+      - cmake
+      - ninja
+      - jenkins
+      - bamboo
+      - teamcity
+      - travis
+      - circleci
+      - github
+      - gitlab
+      - bitbucket
+      - svn
+      - git
+      - mercurial
+      - perforce
+      - tfs
+      - visual
+      - studio
+      - eclipse
+      - intellij
+      - netbeans
+      - xcode
+      - android
+      - flutter
+      - react
+      - angular
+      - vue
+      - webpack
+      - babel
+      - typescript
+      - eslint
+      - prettier
+      - jest
+      - mocha
+      - junit
+      - testng
+      - selenium
+      - cypress
+      - playwright
+    monitoring:
+      - nagios
+      - zabbix
+      - prometheus
+      - grafana
+      - datadog
+      - newrelic
+      - dynatrace
+      - appdynamics
+      - elastic
+      - logstash
+      - kibana
+      - fluentd
+      - telegraf
+      - collectd
+      - statsd
+      - jaeger
+      - zipkin
+      - opentelemetry
+      - sentry
+      - rollbar
+      - bugsnag
+      - honeybadger
+      - airbrake
+    backup:
+      - backup
+      - restore
+      - sync
+      - rsync
+      - bacula
+      - amanda
+      - duplicity
+      - restic
+      - borg
+      - rclone
+      - acronis
+      - veeam
+      - commvault
+      - netbackup
+      - arcserve
+      - carbonite
+      - crashplan
+      - backblaze
+      - dropbox
+      - onedrive
+      - googledrive
+      - icloud
+    communication:
+      - mail
+      - email
+      - smtp
+      - imap
+      - pop3
+      - exchange
+      - outlook
+      - thunderbird
+      - postfix
+      - sendmail
+      - exim
+      - dovecot
+      - courier
+      - zimbra
+      - groupwise
+      - lotus
+      - notes
+      - slack
+      - teams
+      - discord
+      - telegram
+      - whatsapp
+      - skype
+      - zoom
+      - webex
+      - gotomeeting
+      - hangouts
+      - meet
+      - jitsi
+      - bigbluebutton
+    productivity:
+      - office
+      - word
+      - excel
+      - powerpoint
+      - access
+      - publisher
+      - visio
+      - project
+      - onenote
+      - sharepoint
+      - onedrive
+      - teams
+      - libreoffice
+      - openoffice
+      - writer
+      - calc
+      - impress
+      - draw
+      - base
+      - math
+      - google
+      - docs
+      - sheets
+      - slides
+      - drive
+      - calendar
+      - gmail
+      - adobe
+      - acrobat
+      - reader
+      - creative
+      - suite
+      - photoshop
+      - illustrator
+      - indesign
+      - premiere
+      - after
+      - effects
+      - audition
+      - lightroom
+      - dreamweaver
+      - flash
+      - animate
+      - xd
+
+  # Exclusion keywords - Phase 1 enhanced: refined to reduce false positives
+  exclusions:
+      # Remove overly broad exclusions, keep only specific problematic terms
+      - "_"
+      - "test"
+      - "demo"
+      - "sample"
+      - "example"
+      - "template"
+      - "prototype"
+      - "beta"
+      - "alpha"
+      - "rc"
+      - "snapshot"
+      - "nightly"
+      - "dev"
+      - "debug"
+      - "trial"
+      - "evaluation"
+      - "preview"
+      - "experimental"
+      - "unstable"
+      - "legacy"
+      - "deprecated"
+      - "obsolete"
+      - "discontinued"
+      - "end_of_life"
+      - "eol"
+      - "unsupported"
+
+  # Exclusion keywords - CPEs containing these will be filtered out
+  exclusions:
+    - test
+    - demo
+    - sample
+    - example
+    - deprecated
+    - beta
+    - alpha
+    - dev
+    - staging
+  
+  # Normalization map for common product names
+  normalize_map:
+    httpd: apache
+    mysqld: mysql
+    sshd: ssh
+    named: bind
+    postfix: postfix
+    dovecot: dovecot
 
 # Performance and caching configuration
 performance_config:
@@ -1866,3 +2221,7 @@ performance_config:
   # Vulnerability processing limits
   vuln_processing_batch_size: 500  # Process vulnerabilities in batches of this size
   max_retries: 3                   # Maximum retry attempts for failed operations
+  
+  # CPE processing performance settings
+  cpe_processing_batch_size: 1000  # Process CPEs in batches of this size
+  cpe_cache_size: 10000           # Maximum number of CPE lookups to cache

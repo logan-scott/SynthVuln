@@ -11,6 +11,7 @@ import sys
 import os
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 from utils.util import setup_logging, load_config
+from utils.cpe_mapper import build_cpe_mapping
 
 class AssetGenerator:
     """
@@ -40,6 +41,7 @@ class AssetGenerator:
         Args:
             config_file (str): Path to the YAML configuration file
         """
+        self.config_file = config_file
         self.logger = setup_logging('asset_generator.log', __name__)
         self.config = load_config(config_file, self.logger)
         self._initialize_settings()
@@ -95,8 +97,78 @@ class AssetGenerator:
         self.hostname_adjective_count = perf_config.get('hostname_adjective_count', 50)
         self.hostname_noun_count = perf_config.get('hostname_noun_count', 100)
         
+        # Load CPE configuration and mapping
+        self.cpe_config = self.config.get('cpe_config', {})
+        self.cpe_mapping = None
+        self._cpe_mapping_loaded = False
+        
+        # Load asset general type mapping for CPE-based software generation
+        self.asset_general_type_mapping = self.config.get('asset_general_type_mapping', {})
+        
         self.logger.info(f"Initialized AssetGenerator with {len(self.asset_types)} asset types and {len(self.locations)} locations")
         self.logger.info(f"Performance settings: default_count={self.default_asset_count}, batch_size={self.max_asset_batch_size}, progress_interval={self.progress_interval}")
+        if self.cpe_mapping:
+            self.logger.info(f"CPE mapping loaded with {len(self.cpe_mapping.get('cpe_index', {}))} CPEs")
+
+    def _load_cpe_mapping(self):
+        """Load CPE mapping configuration if CPE-based generation is enabled."""
+        if not self.cpe_config.get('enabled', False):
+            self.logger.info("CPE-based asset generation is disabled")
+            return 
+        cpe_mapping_path = self.default_paths.get('cpe_mapping_config')
+        if not cpe_mapping_path:
+            self.logger.warning("CPE mapping config path not specified in configuration")
+            return
+        
+        try:
+            with open(cpe_mapping_path, 'r', encoding='utf-8') as f:
+                self.cpe_mapping = json.load(f)
+            self.logger.info(f"Successfully loaded CPE mapping from {cpe_mapping_path}")
+        except FileNotFoundError:
+            self.logger.warning(f"CPE mapping file not found: {cpe_mapping_path}")
+            self.logger.info("Attempting to generate CPE mapping automatically...")
+            self._generate_cpe_mapping(cpe_mapping_path)
+        except json.JSONDecodeError as e:
+            self.logger.error(f"Error parsing CPE mapping JSON: {e}")
+        except Exception as e:
+            self.logger.error(f"Unexpected error loading CPE mapping: {e}")
+
+    def _generate_cpe_mapping(self, cpe_mapping_path: str):
+        """Generate CPE mapping file using cpe_mapper utility."""
+        try:
+            # Get paths from configuration
+            nvd_cpes_path = self.config.get('data_sources', {}).get('nvd_cpes', 'data/inputs/nvd_cpes.json')
+            config_path = self.config_file
+            
+            # Convert relative paths to absolute paths
+            if not os.path.isabs(nvd_cpes_path):
+                nvd_cpes_path = os.path.join(os.path.dirname(self.config_file), '..', nvd_cpes_path)
+            if not os.path.isabs(cpe_mapping_path):
+                cpe_mapping_path = os.path.join(os.path.dirname(self.config_file), '..', cpe_mapping_path)
+            if not os.path.isabs(config_path):
+                config_path = os.path.join(os.path.dirname(__file__), '..', config_path)
+            
+            self.logger.info(f"Generating CPE mapping from {nvd_cpes_path} to {cpe_mapping_path}")
+            
+            # Call the build_cpe_mapping function
+            build_cpe_mapping(
+                nvd_cpes_path=nvd_cpes_path,
+                config_path=config_path,
+                output_path=cpe_mapping_path,
+                force=True  # Overwrite if exists since we're generating due to missing file
+            )
+            
+            # Try to load the newly generated mapping
+            with open(cpe_mapping_path, 'r', encoding='utf-8') as f:
+                self.cpe_mapping = json.load(f)
+            self.logger.info(f"Successfully generated and loaded CPE mapping from {cpe_mapping_path}")
+            
+        except FileNotFoundError as e:
+            self.logger.error(f"Required input file not found for CPE mapping generation: {e}")
+            self.logger.error("Please ensure NVD CPE data is available or disable CPE-based generation")
+        except Exception as e:
+            self.logger.error(f"Failed to generate CPE mapping: {e}")
+            self.logger.error("CPE-based asset generation will be disabled for this session")
 
     def generate_user_accounts(self, is_privileged: bool = False, count: int = 0) -> List[str]:
         """
@@ -307,102 +379,143 @@ class AssetGenerator:
         return selected_provider
 
     def _generate_installed_software(self, asset_type: str, os_family: str) -> List[Dict[str, str]]:
-        """
-        Generate a list of installed software based on asset type and OS family.
+        """Generate software based on CPE mapping data."""
+        if not self.cpe_config.get('cpe_based_asset_generation', {}).get('enabled', False):
+            return []
         
-        Args:
-            asset_type (str): The type of asset (Desktop, Server, etc.)
-            os_family (str): The OS family (Windows, Linux, etc.)
-            
-        Returns:
-            List[Dict[str, str]]: List of software dictionaries with name and version
-        """
-        installed_software_config = self.config.get('installed_software', {})
-        software_config = self.config.get('software_config', {})
-        asset_mapping = software_config.get('asset_software_mapping', {})
+        # Lazy load CPE mapping only when needed
+        if not self._cpe_mapping_loaded:
+            self._load_cpe_mapping()
+            self._cpe_mapping_loaded = True
         
-        # Get software count configuration
-        count_config = software_config.get('software_count', {'min': 5, 'max': 15})
-        min_count = count_config.get('min', 5)
-        max_count = count_config.get('max', 15)
+        if not self.cpe_mapping:
+            return []
         
-        # Get applicable software groups for this asset type
-        applicable_groups = asset_mapping.get(asset_type, [])
+        cpe_gen_config = self.cpe_config.get('cpe_based_asset_generation', {})
+        software_patterns = self.cpe_config.get('software_installation_patterns', {})
         
-        # Collect all available software from applicable groups
-        all_available_software = []
+        # Get software count range for this asset type
+        count_ranges = software_patterns.get('software_count_ranges', {})
+        count_range = count_ranges.get(asset_type, [5, 15])
+        target_count = random.randint(count_range[0], count_range[1])
         
-        for group in applicable_groups:
-            if isinstance(group, list):
-                # Handle nested lists in the mapping
-                for subgroup in group:
-                    group_software = installed_software_config.get(subgroup, [])
-                    all_available_software.extend(group_software)
-            else:
-                group_software = installed_software_config.get(group, [])
-                all_available_software.extend(group_software)
-        
-        # Add OS-specific software based on os_family
-        if os_family.lower() == 'linux':
-            linux_software = installed_software_config.get('linux_common', [])
-            all_available_software.extend(linux_software)
-        elif os_family.lower() == 'windows':
-            # Determine if it's server or workstation based on asset type
-            if any(keyword in asset_type.lower() for keyword in ['server', 'database', 'web', 'mail', 'dns', 'dhcp']):
-                windows_software = installed_software_config.get('windows_server', [])
-            else:
-                windows_software = installed_software_config.get('windows_workstation', [])
-            all_available_software.extend(windows_software)
-        elif os_family.lower() == 'macos':
-            macos_software = installed_software_config.get('macos_common', [])
-            all_available_software.extend(macos_software)
-        
-        # Add virtualization software if applicable
-        if 'virtual' in asset_type.lower() or 'vm' in asset_type.lower():
-            vm_software = installed_software_config.get('virtual_machine_additions', [])
-            all_available_software.extend(vm_software)
-        
-        # Add container software if applicable
-        if 'container' in asset_type.lower() or 'kubernetes' in asset_type.lower():
-            container_software = installed_software_config.get('container_software', [])
-            all_available_software.extend(container_software)
-        
-        # Remove duplicates while preserving order
-        seen = set()
-        unique_software = []
-        for software in all_available_software:
-            if software not in seen:
-                seen.add(software)
-                unique_software.append(software)
-        
-        if not unique_software:
-            # Fallback software if no configuration
-            fallback = [
-                {"name": "Generic Application", "version": "1.0.0"},
-                {"name": "System Utility", "version": "2.1.0"},
-                {"name": "Network Tool", "version": "3.2.1"}
-            ]
-            return fallback
-        
-        # Select random subset of software
-        num_software = min(random.randint(min_count, max_count), len(unique_software))
-        selected_software_names = random.sample(unique_software, num_software)
-        
-        # Convert to dictionaries with name and version
         selected_software = []
-        for software_name in selected_software_names:
-            # Generate a realistic version number
-            major = random.randint(1, 10)
-            minor = random.randint(0, 20)
-            patch = random.randint(0, 50)
-            version = f"{major}.{minor}.{patch}"
+        cpe_index = self.cpe_mapping.get('cpe_index', {})
+        pools_by_asset_type = self.cpe_mapping.get('pools_by_asset_type', {})
+        index_by_os = self.cpe_mapping.get('index_by_os', {})
+        index_by_system_type = self.cpe_mapping.get('index_by_system_type', {})
+        
+        min_confidence = self.cpe_config.get('min_confidence_threshold', 0.15)
+        
+        # Collect candidate CPEs from various sources
+        candidate_cpes = set()
+        
+        # 1. Asset type specific pools
+        if self.cpe_config.get('use_cpe_pools', True):
+            asset_type_key = asset_type.lower().replace(' ', '_')
+            if asset_type_key in pools_by_asset_type:
+                candidate_cpes.update(pools_by_asset_type[asset_type_key])
+        
+        # 2. OS family specific CPEs
+        os_key = os_family.lower()
+        if os_key in index_by_os:
+            os_cpes = index_by_os[os_key][:cpe_gen_config.get('max_cpes_per_asset_type', 50)]
+            candidate_cpes.update(os_cpes)
+        
+        # 3. System type specific CPEs
+        # Use programmatic mapping from config, with fallback to workstation
+        system_type = self.asset_general_type_mapping.get(asset_type, 'workstation')
+        if system_type in index_by_system_type:
+            sys_cpes = index_by_system_type[system_type][:cpe_gen_config.get('max_cpes_per_asset_type', 50)]
+            candidate_cpes.update(sys_cpes)
+        
+        # Filter CPEs by confidence and select software
+        for cpe_string in candidate_cpes:
+            if len(selected_software) >= target_count:
+                break
+                
+            cpe_data = cpe_index.get(cpe_string, {})
+            if cpe_data.get('confidence', 0) < min_confidence:
+                continue
+            
+            # Apply installation probability based on software category
+            install_prob = self._get_software_install_probability(cpe_data, asset_type, os_family)
+            if random.random() > install_prob:
+                continue
+            
+            # Extract software information
+            vendor = cpe_data.get('vendor', 'Unknown')
+            product = cpe_data.get('product', 'Unknown')
+            version = cpe_data.get('version', '1.0.0')
+            
+            # Clean up version if it's a placeholder
+            if version in ['-', '*', 'N/A']:
+                version = self._generate_realistic_version()
+            
+            # Format software name
+            if vendor.lower() != product.lower() and vendor.lower() != 'unknown':
+                software_name = f"{vendor.title()} {product.replace('_', ' ').title()}"
+            else:
+                software_name = product.replace('_', ' ').title()
             
             selected_software.append({
-                "name": software_name,
-                "version": version
+                'name': software_name,
+                'version': version,
+                'cpe': cpe_string
             })
         
         return selected_software
+    
+    def _get_software_install_probability(self, cpe_data: Dict, asset_type: str, os_family: str) -> float:
+        """Calculate probability of installing software based on CPE data and asset characteristics."""
+        software_patterns = self.cpe_config.get('software_installation_patterns', {})
+        
+        # Base probability
+        base_prob = 0.5
+        
+        # Adjust based on OS families in CPE
+        os_families = cpe_data.get('os_families', [])
+        if os_family.lower() in [of.lower() for of in os_families]:
+            base_prob = software_patterns.get('os_specific_software', 0.9)
+        
+        # Adjust based on system types
+        system_types = cpe_data.get('system_types', [])
+        if 'server' in system_types and 'server' in asset_type.lower():
+            base_prob = software_patterns.get('server_software', 0.8)
+        elif 'workstation' in system_types and asset_type in ['Desktop', 'Laptop', 'Workstation']:
+            base_prob = software_patterns.get('general_applications', 0.5)
+        
+        # Adjust based on tags
+        tags = cpe_data.get('tags', [])
+        if 'security' in tags:
+            base_prob = software_patterns.get('security_software', 0.7)
+        elif 'development' in tags:
+            base_prob = software_patterns.get('development_tools', 0.6)
+        
+        return min(base_prob, 1.0)
+    
+    def _generate_realistic_version(self) -> str:
+        """Generate a realistic version number."""
+        version_dist = self.cpe_config.get('cpe_based_asset_generation', {}).get('version_distribution', {})
+        
+        rand = random.random()
+        if rand < version_dist.get('latest', 0.3):
+            # Latest versions (high numbers)
+            major = random.randint(8, 15)
+            minor = random.randint(0, 5)
+            patch = random.randint(0, 10)
+        elif rand < version_dist.get('latest', 0.3) + version_dist.get('recent', 0.4):
+            # Recent versions (medium numbers)
+            major = random.randint(4, 8)
+            minor = random.randint(0, 15)
+            patch = random.randint(0, 25)
+        else:
+            # Older versions (lower numbers)
+            major = random.randint(1, 4)
+            minor = random.randint(0, 20)
+            patch = random.randint(0, 50)
+        
+        return f"{major}.{minor}.{patch}"
 
     def generate_single_asset(self) -> Dict[str, Any]:
         """
@@ -756,7 +869,7 @@ def main():
     if args.output:
         output_file = args.output
     else:
-        default_output = generator.default_paths.get('asset_output', 'data/raw/assets.json')
+        default_output = generator.default_paths.get('asset_output', 'data/outputs/assets.json')
         # Change extension based on format
         if args.output_format == 'csv':
             output_file = default_output.replace('.json', '.csv')

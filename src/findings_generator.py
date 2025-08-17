@@ -7,6 +7,7 @@ import re
 import sqlite3
 import time
 import uuid
+import yaml
 from datetime import datetime, timedelta
 from typing import List, Dict, Any
 import sys
@@ -76,6 +77,43 @@ class FindingsGenerator:
             'probability': 0.15, 'min_gap_days': 30, 'max_gap_days': 365
         })
         
+        # Load CPE configuration and mapping
+        self._load_cpe_configuration()
+        
+    def _load_cpe_configuration(self):
+        """Load CPE configuration and mapping for vulnerability matching."""
+        self.cpe_config = self.config.get('cpe_config', {})
+        self.cpe_mapping = None
+        
+        # Check if CPE-based vulnerability matching is enabled
+        cpe_vuln_config = self.cpe_config.get('cpe_based_vulnerability_matching', {})
+        if not cpe_vuln_config.get('enabled', False):
+            self.logger.info("CPE-based vulnerability matching is disabled")
+            return
+        
+        # Load CPE mapping file
+        cpe_mapping_path = self.default_paths.get('cpe_mapping_config')
+        if not cpe_mapping_path:
+            self.logger.warning("CPE mapping config path not found in configuration")
+            return
+        
+        try:
+            with open(cpe_mapping_path, 'r', encoding='utf-8') as f:
+                self.cpe_mapping = json.load(f)
+            self.logger.info(f"Successfully loaded CPE mapping from {cpe_mapping_path}")
+            
+            # Log CPE mapping statistics
+            if self.cpe_mapping:
+                cpe_count = len(self.cpe_mapping.get('cpe_index', {}))
+                self.logger.info(f"CPE mapping loaded with {cpe_count} CPEs")
+                
+        except FileNotFoundError:
+            self.logger.warning(f"CPE mapping file not found: {cpe_mapping_path}")
+        except json.JSONDecodeError as e:
+            self.logger.error(f"Error parsing CPE mapping JSON: {e}")
+        except Exception as e:
+            self.logger.error(f"Error loading CPE mapping: {e}")
+        
     def initialize_for_generation(self, asset_file: str = '', num_findings: int = 10, bias_recent: bool = True):
         """Initialize generator for findings generation with specific parameters.
         
@@ -88,7 +126,7 @@ class FindingsGenerator:
         self.bias_recent = bias_recent
         
         # Use config default if no asset file specified
-        self.asset_file = asset_file if asset_file else self.default_paths.get('asset_output', 'data/raw/assets.json')
+        self.asset_file = asset_file if asset_file else self.default_paths.get('asset_output', 'data/outputs/assets.json')
         
         self.assets = self._load_assets()
         self.vulnerabilities = self._load_vulnerabilities()
@@ -316,7 +354,7 @@ class FindingsGenerator:
             self.logger.info("Loading vulnerability data...")
             
             # Load NVD data using streaming approach
-            nvd_base = self.config.get('default_paths', {}).get('nvd_data_dir', 'data/raw/nvd')
+            nvd_base = self.config.get('default_paths', {}).get('nvd_data_dir', 'data/inputs/nvd')
             vulnerabilities = self._stream_nvd_vulnerabilities(nvd_base)
             
             # Cache the results
@@ -601,12 +639,25 @@ class FindingsGenerator:
                             description = desc.get('value', '')
                             break
                     
+                    # Extract CPE information from configurations
+                    cpes = []
+                    configurations = nvd_data.get('configurations', [])
+                    for config in configurations:
+                        nodes = config.get('nodes', [])
+                        for node in nodes:
+                            cpe_match_list = node.get('cpeMatch', [])
+                            for cpe_match in cpe_match_list:
+                                cpe_criteria = cpe_match.get('criteria', '')
+                                if cpe_criteria and cpe_match.get('vulnerable', False):
+                                    cpes.append(cpe_criteria)
+                    
                     year_vulns.append({
                         'id': cve_id,
                         'severity': severity,
                         'base_score': base_score,
                         'description': description,
-                        'year': year
+                        'year': year,
+                        'cpes': cpes
                     })
                     
                 except FileNotFoundError:
@@ -673,8 +724,22 @@ class FindingsGenerator:
                     "is_false_positive": is_false_positive
                 }
 
-                if available_vulns:
+                # Try CPE-based vulnerability matching first
+                cpe_vulns = self._get_cpe_based_vulnerabilities(asset)
+                
+                if cpe_vulns and not is_false_positive:
+                    # Use CPE-matched vulnerability
+                    cve = random.choice(cpe_vulns)
+                    finding["cpe_matched"] = True
+                    self.logger.debug(f"Using CPE-matched vulnerability {cve['id']} for asset {asset['uuid']}")
+                elif available_vulns:
+                    # Fall back to random vulnerability selection
                     cve = random.choice(available_vulns)
+                    finding["cpe_matched"] = False
+                else:
+                    cve = None
+                
+                if cve:
                     finding.update({
                         "cve_id": cve["id"],
                         "severity": cve["severity"],
@@ -711,6 +776,133 @@ class FindingsGenerator:
 
         self.logger.info(f"Findings generation completed: {len(findings)}/{num_findings} items - Generated {len(findings)} findings")
         return findings
+    
+    def _get_cpe_based_vulnerabilities(self, asset: Dict[str, Any]) -> List[Dict[str, Any]]:
+        """Get vulnerabilities that match the asset's installed software CPEs.
+        
+        Args:
+            asset: Asset dictionary containing installed software with CPE information
+            
+        Returns:
+            List of vulnerabilities that match the asset's software CPEs
+        """
+        if not self.cpe_mapping or not self.cpe_config.get('cpe_based_vulnerability_matching', {}).get('enabled', False):
+            return []
+        
+        # Extract CPEs from asset's installed software
+        asset_cpes = set()
+        installed_software = asset.get('installed_software', [])
+        
+        for software in installed_software:
+            cpe = software.get('cpe')
+            if cpe:
+                asset_cpes.add(cpe)
+        
+        if not asset_cpes:
+            return []
+        
+        # Find vulnerabilities that match these CPEs
+        matching_vulns = []
+        cpe_vuln_config = self.cpe_config.get('cpe_based_vulnerability_matching', {})
+        max_vulns_per_asset = cpe_vuln_config.get('max_vulnerabilities_per_asset', 20)
+        
+        for vuln in self.vulnerabilities:
+            # Check if vulnerability has CPE information (handle both formats)
+            vuln_cpes = vuln.get('cpes', [])
+            cpe_matches = vuln.get('cpe_matches', [])
+            
+            # Extract CPE criteria from cpe_matches if cpes is empty
+            if not vuln_cpes and cpe_matches:
+                vuln_cpes = [match.get('criteria', '') for match in cpe_matches if match.get('vulnerable', False)]
+            
+            if not vuln_cpes:
+                continue
+            
+            # Check for CPE matches
+            for vuln_cpe in vuln_cpes:
+                if vuln_cpe and self._cpe_matches_asset(vuln_cpe, asset_cpes):
+                    matching_vulns.append(vuln)
+                    break  # Found a match, no need to check other CPEs for this vuln
+            
+            # Limit the number of vulnerabilities per asset
+            if len(matching_vulns) >= max_vulns_per_asset:
+                break
+        
+        return matching_vulns
+    
+    def _cpe_matches_asset(self, vuln_cpe: str, asset_cpes: set) -> bool:
+        """Check if a vulnerability CPE matches any of the asset's CPEs.
+        
+        Args:
+            vuln_cpe: CPE string from vulnerability
+            asset_cpes: Set of CPE strings from asset's installed software
+            
+        Returns:
+            True if there's a match, False otherwise
+        """
+        # Direct match
+        if vuln_cpe in asset_cpes:
+            return True
+        
+        # Parse CPE components for partial matching
+        try:
+            vuln_parts = self._parse_cpe(vuln_cpe)
+            
+            for asset_cpe in asset_cpes:
+                asset_parts = self._parse_cpe(asset_cpe)
+                
+                # Check if vendor and product match (ignore version for broader matching)
+                if (vuln_parts.get('vendor') == asset_parts.get('vendor') and
+                    vuln_parts.get('product') == asset_parts.get('product')):
+                    
+                    # Apply version matching logic
+                    if self._version_matches(vuln_parts.get('version', ''), asset_parts.get('version', '')):
+                        return True
+        
+        except Exception:
+            # If parsing fails, fall back to string comparison
+            pass
+        
+        return False
+    
+    def _parse_cpe(self, cpe_string: str) -> Dict[str, str]:
+        """Parse CPE string into components.
+        
+        Args:
+            cpe_string: CPE string to parse
+            
+        Returns:
+            Dictionary with CPE components
+        """
+        # Simple CPE parsing for cpe:2.3:a:vendor:product:version format
+        parts = cpe_string.split(':')
+        if len(parts) >= 6:
+            return {
+                'vendor': parts[3] if parts[3] != '*' else '',
+                'product': parts[4] if parts[4] != '*' else '',
+                'version': parts[5] if parts[5] != '*' else '',
+            }
+        return {}
+    
+    def _version_matches(self, vuln_version: str, asset_version: str) -> bool:
+        """Check if vulnerability version affects the asset version.
+        
+        Args:
+            vuln_version: Version from vulnerability CPE
+            asset_version: Version from asset software
+            
+        Returns:
+            True if the asset version is affected by the vulnerability
+        """
+        if not vuln_version or not asset_version:
+            return True  # If version info is missing, assume match
+        
+        if vuln_version == '*' or asset_version == '*':
+            return True  # Wildcard matches all
+        
+        # For now, use exact match or wildcard
+        # This could be enhanced with version range checking
+        return vuln_version == asset_version or vuln_version == '*'
     
     def _generate_timestamps(self, cve_year: int, base_timestamp: datetime) -> Dict[str, str]:
         """Generate the three timestamp fields for a vulnerability finding.
@@ -795,7 +987,7 @@ class FindingsGenerator:
         """
         # Use config default if no output file specified
         if not output_file:
-            output_file = self.config.get('default_paths', {}).get('findings_output', 'data/raw/findings.json')
+            output_file = self.config.get('default_paths', {}).get('findings_output', 'data/outputs/findings.json')
         
         # Create directory if it doesn't exist
         output_dir = os.path.dirname(output_file)
@@ -943,7 +1135,7 @@ def main():
     if args.output:
         output_file = args.output
     else:
-        default_output = generator.config.get('default_paths', {}).get('findings_output', 'data/raw/findings.json')
+        default_output = generator.config.get('default_paths', {}).get('findings_output', 'data/outputs/findings.json')
         # Change extension based on format
         if args.output_format == 'csv':
             output_file = default_output.replace('.json', '.csv')
