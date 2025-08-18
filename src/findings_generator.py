@@ -28,6 +28,8 @@ class FindingsGenerator:
     """
     _vulnerability_cache = None
     _cache_timestamp = None
+    _cpe_vulnerability_index = None
+    _parsed_cpe_cache = {}
     
     def __init__(self, config_file: str = "configs/generator_config.yaml"):
         """Initialize the FindingsGenerator.
@@ -369,6 +371,9 @@ class FindingsGenerator:
             FindingsGenerator._vulnerability_cache = vulnerabilities
             FindingsGenerator._cache_timestamp = current_time
             
+            # Build CPE-to-vulnerability index for fast lookups
+            self._build_cpe_vulnerability_index(vulnerabilities)
+            
             self.logger.info(f"Loaded {len(vulnerabilities)} vulnerabilities from NVD database")
             
             return vulnerabilities
@@ -386,6 +391,10 @@ class FindingsGenerator:
             # Cache fallback as well
             FindingsGenerator._vulnerability_cache = fallback_vulns
             FindingsGenerator._cache_timestamp = current_time
+            
+            # Build index for fallback data too
+            self._build_cpe_vulnerability_index(fallback_vulns)
+            
             return fallback_vulns
     
     def _stream_nvd_vulnerabilities(self, nvd_base: str) -> List[Dict[str, Any]]:
@@ -414,6 +423,24 @@ class FindingsGenerator:
                 with open(nvd_json_file, 'r', encoding='utf-8') as f:
                     flat_vulnerabilities = json.load(f)
                 self.logger.info(f"Loaded {len(flat_vulnerabilities)} vulnerabilities from flat JSON file")
+                
+                # Pre-weighted vulnerability pool
+                # Apply recent bias and year weights if configured
+                if self.bias_recent:
+                    flat_vulnerabilities = self._apply_recent_bias_to_vulnerabilities(flat_vulnerabilities)
+                    self.logger.info(f"Applied recent bias weighting: {len(flat_vulnerabilities)} weighted vulnerabilities")
+                
+                # Limit vulnerabilities for performance
+                max_vulns_config = self.config.get('findings_config', {}).get('max_unique_vulns', 5000)
+                max_unique_vulns = min(self.num_findings * 10, max_vulns_config)
+                
+                if len(flat_vulnerabilities) > max_unique_vulns:
+                    # Shuffle the weighted pool to ensure random sampling across all years
+                    # This preserves the weighting while ensuring we don't just get the first N entries
+                    random.shuffle(flat_vulnerabilities)
+                    flat_vulnerabilities = flat_vulnerabilities[:max_unique_vulns]
+                    self.logger.info(f"Limited to {max_unique_vulns} vulnerabilities for performance (shuffled weighted pool)")
+                
                 return flat_vulnerabilities
             except Exception as e:
                 self.logger.warning(f"Error loading flat JSON file {nvd_json_file}: {e}")
@@ -532,6 +559,76 @@ class FindingsGenerator:
             target_per_year[year_dir] = target_count
         
         return target_per_year
+    
+    def _apply_recent_bias_to_vulnerabilities(self, vulnerabilities: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """Apply recent bias weighting to vulnerability selection.
+        
+        Creates a weighted vulnerability pool where recent CVEs appear more frequently
+        based on the configured year weights.
+        
+        Args:
+            vulnerabilities: List of all available vulnerabilities
+            
+        Returns:
+            Weighted list of vulnerabilities with recent CVEs duplicated based on weights
+        """
+        if not vulnerabilities:
+            return vulnerabilities
+            
+        # Group vulnerabilities by year
+        vulns_by_year = {}
+        for vuln in vulnerabilities:
+            year = vuln.get('year', 0)
+            if year not in vulns_by_year:
+                vulns_by_year[year] = []
+            vulns_by_year[year].append(vuln)
+        
+        # Get year weights from config
+        config_weights = self.config.get('findings_config', {}).get('recent_bias', {}).get('year_weights', {})
+        
+        # Default weights if config is missing
+        default_weights = {
+            '2025_and_later': 0.4,
+            '2024': 0.3,
+            '2023': 0.2,
+            '2020_to_2022': 0.05,
+            '2015_to_2019': 0.03,
+            'before_2015': 0.02,
+            'malformed': 0.01
+        }
+        
+        weights = {**default_weights, **config_weights}
+        
+        # Create weighted vulnerability pool
+        weighted_vulns = []
+        base_multiplier = 100  # Base multiplier for weight conversion
+        
+        for year, year_vulns in vulns_by_year.items():
+            # Determine weight category for this year
+            if year >= 2025:
+                weight = weights['2025_and_later']
+            elif year >= 2024:
+                weight = weights['2024']
+            elif year >= 2023:
+                weight = weights['2023']
+            elif year >= 2020:
+                weight = weights['2020_to_2022']
+            elif year >= 2015:
+                weight = weights['2015_to_2019']
+            elif year > 0:
+                weight = weights['before_2015']
+            else:
+                weight = weights['malformed']
+            
+            # Calculate how many times to include each vulnerability
+            multiplier = max(1, int(weight * base_multiplier))
+            
+            # Add vulnerabilities to weighted pool
+            for vuln in year_vulns:
+                weighted_vulns.extend([vuln] * multiplier)
+        
+        self.logger.debug(f"Applied recent bias: {len(vulnerabilities)} -> {len(weighted_vulns)} weighted vulnerabilities")
+        return weighted_vulns
 
     def _stream_year_vulnerabilities(self, nvd_base: str, year_dir: str, target_count: int) -> List[Dict[str, Any]]:
         """Stream vulnerabilities from a specific year directory.
@@ -683,6 +780,73 @@ class FindingsGenerator:
         
         return year_vulns
 
+    def _build_cpe_vulnerability_index(self, vulnerabilities: List[Dict[str, Any]]):
+        """Build an index mapping CPE patterns to vulnerabilities for fast lookups.
+        
+        Args:
+            vulnerabilities: List of vulnerability dictionaries
+        """
+        start_time = time.time()
+        index = {}
+        
+        for vuln in vulnerabilities:
+            # Get CPE information from vulnerability
+            vuln_cpes = vuln.get('cpes', [])
+            cpe_matches = vuln.get('cpe_matches', [])
+            
+            # Extract CPE criteria from cpe_matches if cpes is empty
+            if not vuln_cpes and cpe_matches:
+                vuln_cpes = [match.get('criteria', '') for match in cpe_matches if match.get('vulnerable', False)]
+            
+            # Index each CPE pattern
+            for cpe in vuln_cpes:
+                if not cpe:
+                    continue
+                    
+                # Parse CPE for indexing
+                parsed_cpe = self._parse_cpe_cached(cpe)
+                if not parsed_cpe:
+                    continue
+                    
+                # Create index keys for different matching strategies
+                vendor = parsed_cpe.get('vendor', '')
+                product = parsed_cpe.get('product', '')
+                
+                if vendor and product:
+                    # Exact vendor:product key
+                    key = f"{vendor}:{product}"
+                    if key not in index:
+                        index[key] = []
+                    index[key].append(vuln)
+                    
+                    # Vendor-only key for broader matching
+                    vendor_key = f"vendor:{vendor}"
+                    if vendor_key not in index:
+                        index[vendor_key] = []
+                    index[vendor_key].append(vuln)
+        
+        # Store the index
+        FindingsGenerator._cpe_vulnerability_index = index
+        
+        build_time = time.time() - start_time
+        self.logger.info(f"Built CPE vulnerability index with {len(index)} keys in {build_time:.2f}s")
+
+    def _parse_cpe_cached(self, cpe_string: str) -> Dict[str, str]:
+        """Parse CPE string with caching to avoid repeated parsing.
+        
+        Args:
+            cpe_string: CPE string to parse
+            
+        Returns:
+            Dictionary with CPE components
+        """
+        if cpe_string in FindingsGenerator._parsed_cpe_cache:
+            return FindingsGenerator._parsed_cpe_cache[cpe_string]
+            
+        parsed = self._parse_cpe(cpe_string)
+        FindingsGenerator._parsed_cpe_cache[cpe_string] = parsed
+        return parsed
+
     def generate_findings(self, 
                          num_findings: int = 0,
                          detection_probability: float = 0.7,
@@ -709,11 +873,23 @@ class FindingsGenerator:
         if not self.assets:
             raise ValueError("No assets loaded")
 
+        # Performance monitoring
+        start_time = time.time()
+        cpe_lookup_time = 0.0
+        cpe_lookups = 0
+        
         findings = []
         base_timestamp = datetime.now() - timedelta(days=30)
         
-        # Pull from available vulns
+        # General vulnerability pool
+        # Pull from available vulns and apply recent bias weighting if enabled
         available_vulns = self.vulnerabilities
+        if self.bias_recent and available_vulns:
+            available_vulns = self._apply_recent_bias_to_vulnerabilities(available_vulns)
+        
+        # Batch processing for better performance
+        batch_size = min(self.vuln_batch_size, num_findings)
+        processed = 0
 
         # Generate findings until the requested number
         while len(findings) < num_findings:
@@ -733,9 +909,16 @@ class FindingsGenerator:
                 }
 
                 # Try CPE-based vulnerability matching first
+                cpe_start = time.time()
                 cpe_vulns = self._get_cpe_based_vulnerabilities(asset)
+                cpe_lookup_time += time.time() - cpe_start
+                cpe_lookups += 1
                 
                 if cpe_vulns and not is_false_positive:
+                    # CPE-matched vulnerability pool
+                    # Apply recent bias to CPE-matched vulnerabilities if enabled
+                    if self.bias_recent:
+                        cpe_vulns = self._apply_recent_bias_to_vulnerabilities(cpe_vulns)
                     # Use CPE-matched vulnerability
                     cve = random.choice(cpe_vulns)
                     finding["cpe_matched"] = True
@@ -781,8 +964,21 @@ class FindingsGenerator:
                     finding.update(timestamps)
 
                 findings.append(finding)
+                processed += 1
+                
+                # Progress reporting with performance metrics
+                if processed % self.progress_interval == 0 or processed == num_findings:
+                    elapsed = time.time() - start_time
+                    rate = processed / elapsed if elapsed > 0 else 0
+                    avg_cpe_time = cpe_lookup_time / cpe_lookups if cpe_lookups > 0 else 0
+                    self.logger.info(f"Progress: {processed}/{num_findings} findings generated ({processed/num_findings*100:.1f}%) - Rate: {rate:.1f}/s - Avg CPE lookup: {avg_cpe_time*1000:.1f}ms")
 
-        self.logger.info(f"Findings generation completed: {len(findings)}/{num_findings} items - Generated {len(findings)} findings")
+        # Final performance summary
+        total_time = time.time() - start_time
+        avg_cpe_time = cpe_lookup_time / cpe_lookups if cpe_lookups > 0 else 0
+        self.logger.info(f"Findings generation completed: {len(findings)}/{num_findings} items in {total_time:.2f}s")
+        self.logger.info(f"Performance: {len(findings)/total_time:.1f} findings/s, {cpe_lookups} CPE lookups, avg {avg_cpe_time*1000:.1f}ms per lookup")
+        
         return findings
     
     def _get_cpe_based_vulnerabilities(self, asset: Dict[str, Any]) -> List[Dict[str, Any]]:
@@ -797,6 +993,94 @@ class FindingsGenerator:
         if not self.cpe_mapping or not self.cpe_config.get('cpe_based_vulnerability_matching', {}).get('enabled', False):
             return []
         
+        # Use index-based lookup if available
+        if FindingsGenerator._cpe_vulnerability_index is not None:
+            return self._get_cpe_vulnerabilities_indexed(asset)
+        
+        # Fallback to original method if index not available
+        return self._get_cpe_vulnerabilities_legacy(asset)
+    
+    def _get_cpe_vulnerabilities_indexed(self, asset: Dict[str, Any]) -> List[Dict[str, Any]]:
+        """Fast CPE-based vulnerability lookup using the pre-built index.
+        
+        Args:
+            asset: Asset dictionary containing installed software with CPE information
+            
+        Returns:
+            List of vulnerabilities that match the asset's software CPEs
+        """
+        # Extract CPEs from asset's installed software
+        asset_cpes = set()
+        installed_software = asset.get('installed_software', [])
+        
+        for software in installed_software:
+            cpe = software.get('cpe')
+            if cpe:
+                asset_cpes.add(cpe)
+        
+        if not asset_cpes:
+            return []
+        
+        # Use index to find matching vulnerabilities
+        matching_vulns = set()  # Use set to avoid duplicates
+        cpe_vuln_config = self.cpe_config.get('cpe_based_vulnerability_matching', {})
+        max_vulns_per_asset = cpe_vuln_config.get('max_vulnerabilities_per_asset', 20)
+        
+        for asset_cpe in asset_cpes:
+            parsed_cpe = self._parse_cpe_cached(asset_cpe)
+            if not parsed_cpe:
+                continue
+                
+            vendor = parsed_cpe.get('vendor', '')
+            product = parsed_cpe.get('product', '')
+            
+            if vendor and product:
+                # Look for exact vendor:product matches
+                key = f"{vendor}:{product}"
+                if FindingsGenerator._cpe_vulnerability_index is not None and key in FindingsGenerator._cpe_vulnerability_index:
+                    for vuln in FindingsGenerator._cpe_vulnerability_index[key]:
+                        if len(matching_vulns) >= max_vulns_per_asset:
+                            break
+                        # Verify the match with detailed comparison
+                        if self._cpe_matches_asset_detailed(vuln, asset_cpe, parsed_cpe):
+                            matching_vulns.add(id(vuln))  # Use object id to avoid duplicates
+                            
+                if len(matching_vulns) >= max_vulns_per_asset:
+                    break
+        
+        # Convert back to list of vulnerability objects
+        result_vulns = []
+        for asset_cpe in asset_cpes:
+            parsed_cpe = self._parse_cpe_cached(asset_cpe)
+            if not parsed_cpe:
+                continue
+                
+            vendor = parsed_cpe.get('vendor', '')
+            product = parsed_cpe.get('product', '')
+            
+            if vendor and product:
+                key = f"{vendor}:{product}"
+                if FindingsGenerator._cpe_vulnerability_index is not None and key in FindingsGenerator._cpe_vulnerability_index:
+                    for vuln in FindingsGenerator._cpe_vulnerability_index[key]:
+                        if len(result_vulns) >= max_vulns_per_asset:
+                            break
+                        if id(vuln) in matching_vulns and vuln not in result_vulns:
+                            result_vulns.append(vuln)
+                            
+                if len(result_vulns) >= max_vulns_per_asset:
+                    break
+        
+        return result_vulns
+    
+    def _get_cpe_vulnerabilities_legacy(self, asset: Dict[str, Any]) -> List[Dict[str, Any]]:
+        """Legacy CPE-based vulnerability lookup (fallback method).
+        
+        Args:
+            asset: Asset dictionary containing installed software with CPE information
+            
+        Returns:
+            List of vulnerabilities that match the asset's software CPEs
+        """
         # Extract CPEs from asset's installed software
         asset_cpes = set()
         installed_software = asset.get('installed_software', [])
@@ -837,7 +1121,50 @@ class FindingsGenerator:
                 break
         
         return matching_vulns
-    
+
+    def _cpe_matches_asset_detailed(self, vuln: Dict[str, Any], asset_cpe: str, parsed_asset_cpe: Dict[str, str]) -> bool:
+        """Detailed CPE matching for indexed lookups.
+        
+        Args:
+            vuln: Vulnerability dictionary
+            asset_cpe: Asset CPE string
+            parsed_asset_cpe: Pre-parsed asset CPE components
+            
+        Returns:
+            True if there's a match, False otherwise
+        """
+        # Get vulnerability CPEs
+        vuln_cpes = vuln.get('cpes', [])
+        cpe_matches = vuln.get('cpe_matches', [])
+        
+        # Extract CPE criteria from cpe_matches if cpes is empty
+        if not vuln_cpes and cpe_matches:
+            vuln_cpes = [match.get('criteria', '') for match in cpe_matches if match.get('vulnerable', False)]
+        
+        # Check each vulnerability CPE against the asset CPE
+        for vuln_cpe in vuln_cpes:
+            if not vuln_cpe:
+                continue
+                
+            # Direct match
+            if vuln_cpe == asset_cpe:
+                return True
+                
+            # Parse vulnerability CPE for detailed comparison
+            parsed_vuln_cpe = self._parse_cpe_cached(vuln_cpe)
+            if not parsed_vuln_cpe:
+                continue
+                
+            # Check vendor and product match
+            if (parsed_vuln_cpe.get('vendor') == parsed_asset_cpe.get('vendor') and
+                parsed_vuln_cpe.get('product') == parsed_asset_cpe.get('product')):
+                
+                # Apply version matching logic
+                if self._version_matches(parsed_vuln_cpe.get('version', ''), parsed_asset_cpe.get('version', '')):
+                    return True
+        
+        return False
+
     def _cpe_matches_asset(self, vuln_cpe: str, asset_cpes: set) -> bool:
         """Check if a vulnerability CPE matches any of the asset's CPEs.
         
