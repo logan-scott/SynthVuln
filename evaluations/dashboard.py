@@ -1,11 +1,9 @@
 #!/usr/bin/env python3
 """
-Business Intelligence Dashboard for Vulnerability Analysis
+Business Intelligence Dashboard for SynthVuln Vulnerability Analysis
 
 This script creates an interactive Streamlit dashboard to visualize
 vulnerability data, risk metrics, and asset information.
-
-NEW: Integrates generator_config.yaml for configuration-driven analysis.
 
 Usage:
     streamlit run dashboard.py
@@ -457,7 +455,11 @@ def load_scenario_config(scenario_name):
     # Load default configuration
     base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     default_config_path = os.path.join(base_dir, 'configs', 'generator_config.yaml')
-    default_config = load_config(default_config_path)
+    default_config = load_config(default_config_path, use_fallback=True)
+    
+    # Ensure default_config is not None
+    if default_config is None:
+        default_config = {}
     
     # For baseline scenario, return just the default configuration
     if scenario_name == 'baseline':
@@ -465,7 +467,11 @@ def load_scenario_config(scenario_name):
     
     # Load scenario-specific configuration
     scenario_config_path = os.path.join(base_dir, 'configs', f'scenario_{scenario_name}.yaml')
-    scenario_config = load_config(scenario_config_path)
+    scenario_config = load_config(scenario_config_path, use_fallback=True)
+    
+    # Ensure scenario_config is not None
+    if scenario_config is None:
+        scenario_config = {}
     
     # Merge configurations (scenario-specific overrides default)
     merged_config = {**default_config, **scenario_config}

@@ -1,14 +1,9 @@
 #!/usr/bin/env python3
 """
-Shannon Entropy Analysis for Vulnerability Scenarios
+Shannon Entropy Analysis for SynthVuln Scenarios
 
 This script computes Shannon entropy of categorical distributions across
 different vulnerability scenarios to analyze data diversity and randomness.
-
-NEW: Integrates generator_config.yaml for configuration-driven analysis.
-
-Usage:
-    python entropy.py
 """
 
 import json
