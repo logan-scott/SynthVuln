@@ -1,0 +1,424 @@
+# Small Business Scenario Configuration
+# ~50 assets, mix of Windows + Linux desktops/servers, minimal cloud
+# Low diversity in software, few high-severity findings
+
+# Override default file paths for scenario-specific outputs
+default_paths:
+  asset_output: data/outputs/scenario_small_assets.json
+  findings_output: data/outputs/scenario_small_findings.json
+  nvd_data_dir: data/inputs/
+  cpe_mapping_config: configs/cpe_mapping_config.json
+
+# Fixed seed for reproducible small business scenario
+random_seed: 12345
+
+# Asset type definitions - small business focused
+asset_types:
+- Desktop                 # End-user workstations
+- Laptop                  # Portable end-user devices
+- Mobile device           # Smartphones, tablets
+- Workstation             # High-performance user systems
+- Server                  # Generic server systems
+- Webserver               # HTTP/HTTPS serving systems
+- Storage server          # File/block storage systems
+- Firewall                # Network security appliances
+- Router                  # Network routing devices
+
+# Asset type to general category mapping for CPE-based software generation
+asset_general_type_mapping:
+  Desktop: workstation
+  Laptop: workstation
+  Mobile device: mobile
+  Workstation: workstation
+  Server: server
+  Webserver: server
+  Storage server: server
+  Firewall: network
+  Router: network
+
+# Location definitions - small business network zones
+locations:
+- Remote                  # Work-from-home, mobile users
+- Internal                # Corporate LAN/office networks
+- Data center             # Small server room/closet
+- Cloud                   # Minimal cloud deployments
+
+# Common ports used across different asset types
+common_ports:
+- 22                      # SSH
+- 80                      # HTTP
+- 443                     # HTTPS
+- 3389                    # RDP
+- 3306                    # MySQL
+- 5432                    # PostgreSQL
+
+# Operating system definitions - small business focused
+operating_systems:
+  Windows:
+    - Windows 11 Pro
+    - Windows 11 Home
+    - Windows 10 Pro
+    - Windows 10 Home
+    - Windows Server 2022
+    - Windows Server 2019
+    - Windows Server 2016
+  Linux:
+    - Ubuntu 22.04 LTS
+    - Ubuntu 20.04 LTS
+    - Ubuntu 18.04 LTS
+    - CentOS 8
+    - CentOS 7
+    - Debian 11
+    - Debian 10
+  macOS:
+    - macOS Sonoma 14
+    - macOS Ventura 13
+    - macOS Monterey 12
+    - macOS Big Sur 11
+  Mobile:
+    - iOS 17
+    - iOS 16
+    - iOS 15
+    - Android 14
+    - Android 13
+    - Android 12
+  Network:
+    - Cisco IOS 15.5
+    - Cisco IOS 15.4
+    - pfSense 2.7
+    - pfSense 2.6
+
+# Asset lifecycle stage definitions
+lifecycle_stages:
+  - Production            # Live, business-critical systems
+  - Development           # Development and testing environments
+  - Testing               # Quality assurance and testing
+  - Maintenance           # Temporarily offline for updates/repairs
+  - Decommissioned        # End-of-life, scheduled for removal
+
+# Asset to operating system mapping
+asset_os_mapping:
+  Desktop:
+    - Windows
+    - macOS
+    - Linux
+  Laptop:
+    - Windows
+    - macOS
+    - Linux
+  Mobile device:
+    - Mobile
+  Workstation:
+    - Windows
+    - macOS
+    - Linux
+  Server:
+    - Windows
+    - Linux
+  Webserver:
+    - Windows
+    - Linux
+  Storage server:
+    - Windows
+    - Linux
+  Firewall:
+    - Network
+    - Linux
+  Router:
+    - Network
+
+# Performance configuration for small business scenario
+performance_config:
+  default_asset_count: 50        # Target ~50 assets for small business
+  max_asset_batch_size: 100      # Small batch size
+  cache_duration_seconds: 3600
+  max_directory_scan_depth: 10
+  progress_report_interval: 10
+  hostname_adjective_count: 20
+  hostname_noun_count: 30
+  vuln_processing_batch_size: 100
+  max_retries: 3
+  cpe_processing_batch_size: 200
+  cpe_cache_size: 1000
+
+# Asset type distribution for small business (simplified environment)
+asset_type_distribution:
+  Desktop: 40.0                # 40% - Primary end-user devices
+  Laptop: 25.0                 # 25% - Mobile work devices
+  Server: 15.0                 # 15% - Essential servers
+  Workstation: 8.0             # 8% - Specialized systems
+  Mobile device: 5.0           # 5% - Limited mobile devices
+  Webserver: 3.0               # 3% - Simple web presence
+  Storage server: 2.0          # 2% - Basic file storage
+  Firewall: 1.0                # 1% - Basic security
+  Router: 1.0                  # 1% - Network infrastructure
+
+# Operating system distribution (Windows-heavy small business)
+os_distribution_by_asset:
+  Desktop:
+    Windows: 85.0              # Heavy Windows usage
+    macOS: 10.0
+    Linux: 5.0
+  Laptop:
+    Windows: 80.0
+    macOS: 15.0
+    Linux: 5.0
+  Server:
+    Windows: 60.0              # Mixed server environment
+    Linux: 40.0
+  Webserver:
+    Linux: 70.0
+    Windows: 30.0
+  Storage server:
+    Windows: 70.0
+    Linux: 30.0
+  Workstation:
+    Windows: 75.0
+    macOS: 20.0
+    Linux: 5.0
+  Mobile device:
+    Mobile: 100.0
+  Firewall:
+    Network: 80.0
+    Linux: 20.0
+  Router:
+    Network: 100.0
+
+# Asset to location mapping - defines where each asset type can be deployed
+asset_location_mapping:
+  Desktop:
+  - Remote                  # Work-from-home setups
+  - Internal                # Office environments
+  Laptop:
+  - Remote                  # Mobile/home workers
+  - Internal                # Office use
+  Mobile device:
+  - Remote                  # Primarily mobile/remote usage
+  Workstation:
+  - Remote                  # Remote power users
+  - Internal                # Office-based specialists
+  Server:
+  - Internal                # Small office servers
+  - Data center             # Server room
+  - Cloud                   # Cloud deployments
+  Webserver:
+  - Internal                # Internal web apps
+  - Data center             # Hosting
+  - Cloud                   # Cloud-hosted sites
+  Storage server:
+  - Internal                # Office file servers
+  - Data center             # Storage systems
+  Firewall:
+  - Internal                # Office network protection
+  - Data center             # Server room protection
+  Router:
+  - Internal                # Office network routing
+  - Data center             # Server room networking
+
+# Asset to port mapping - defines typical open ports for each asset type
+asset_port_mapping:
+  Desktop:
+  - 22                      # SSH (Linux/macOS)
+  - 3389                    # RDP (Windows Remote Desktop)
+  Laptop:
+  - 22                      # SSH access
+  - 3389                    # RDP for remote work
+  Mobile device:
+  - 80                      # HTTP
+  - 443                     # HTTPS
+  Workstation:
+  - 22                      # SSH
+  - 3389                    # RDP
+  - 80                      # HTTP
+  - 443                     # HTTPS
+  Server:
+  - 22                      # SSH
+  - 80                      # HTTP
+  - 443                     # HTTPS
+  - 3389                    # RDP
+  - 3306                    # MySQL
+  - 5432                    # PostgreSQL
+  Webserver:
+  - 22                      # SSH
+  - 80                      # HTTP
+  - 443                     # HTTPS
+  Storage server:
+  - 22                      # SSH
+  - 445                     # SMB
+  - 2049                    # NFS
+  Firewall:
+  - 22                      # SSH management
+  - 80                      # Web interface
+  - 443                     # HTTPS interface
+  Router:
+  - 22                      # SSH
+  - 23                      # Telnet
+  - 80                      # Web interface
+  - 443                     # HTTPS interface
+
+# Internet exposure probabilities
+asset_internet_exposure_base:
+  Desktop: 0.05
+  Laptop: 0.1
+  Mobile device: 0.8
+  Workstation: 0.05
+  Server: 0.2
+  Webserver: 0.6
+  Storage server: 0.1
+  Firewall: 0.3
+  Router: 0.2
+
+# Location exposure multipliers
+location_exposure_multiplier:
+  Internal: 0.1
+  Remote: 1.5
+  Data center: 0.8
+  Cloud: 2.0
+
+# Internal network configuration
+internal_networks:
+  corporate:
+    ip_ranges:
+      - "192.168.1.0/24"     # Main office subnet
+      - "192.168.10.0/24"    # Secondary subnet
+    applicable_asset_types:
+      - Desktop
+      - Laptop
+      - Workstation
+      - Server
+      - Webserver
+      - Storage server
+  
+  wireless:
+    ip_ranges:
+      - "192.168.100.0/24"   # Wireless network
+    applicable_asset_types:
+      - Laptop
+      - Mobile device
+  
+  datacenter:
+    ip_ranges:
+      - "10.10.0.0/24"       # Server room
+    applicable_asset_types:
+      - Server
+      - Storage server
+      - Firewall
+      - Router
+
+# Public IP configuration
+public_ip_config:
+  company_blocks:
+    - "203.0.113.0/29"     # Small company block
+  
+  company_locations:
+    - "Internal"
+    - "Data center"
+  
+  remote_locations:
+    - "Remote"
+    - "Cloud"
+
+# Lifecycle stage distribution (production-focused)
+lifecycle_stage_distribution:
+  Production: 75.0             # Most systems in production
+  Development: 10.0            # Limited dev environment
+  Testing: 5.0
+  Staging: 5.0
+  Maintenance: 3.0
+  Decommissioned: 2.0
+
+# Location distribution (minimal cloud)
+asset_location_distribution:
+  Internal: 70.0               # Primarily on-premises
+  Remote: 20.0                 # Some remote work
+  Data center: 8.0             # Small data center
+  Cloud: 2.0                   # Minimal cloud adoption
+
+# Cloud provider distribution (limited cloud usage)
+cloud_service_providers:
+  distribution:
+    aws: 40.0                  # Basic AWS usage
+    azure: 35.0                # Office 365 integration
+    gcp: 15.0
+    other: 10.0
+
+# Security features (basic security posture)
+security_features:
+  endpoint_security:
+    default_probability: 0.6   # 60% coverage
+  local_firewall:
+    default_probability: 0.5   # 50% coverage
+
+# Findings configuration (fewer high-severity findings)
+findings_config:
+  detection_tools:
+  - Nessus
+  - OpenVAS
+  - Qualys
+  
+  # Lower severity bias for small business
+  severity_weights:
+    CRITICAL: 2                # 2% - Very few critical
+    HIGH: 8                    # 8% - Limited high severity
+    MEDIUM: 35                 # 35% - Moderate issues
+    LOW: 55                    # 55% - Mostly low severity
+  
+  # Vulnerability counts (lower range)
+  vulnerability_counts:
+    min: 1
+    max: 5                     # Fewer vulnerabilities per asset
+  
+  max_unique_vulns: 1000       # Smaller vulnerability pool
+  detection_probability: 0.6   # 60% detection rate
+  false_positive_rate: 0.15    # 15% false positive rate
+  
+  recent_bias:
+    enabled: true
+    cutoff_years: 3            # Longer cutoff for older systems
+    multiplier: 2.0            # Lower bias towards recent vulns
+
+# CPE configuration (simplified)
+cpe_config:
+  enabled: true
+  use_cpe_pools: true
+  min_confidence_threshold: 0.2
+  prefer_versioned_cpes: true
+  
+  cpe_based_asset_generation:
+    enabled: true
+    max_cpes_per_asset_type: 20  # Fewer CPEs per type
+    version_distribution:
+      latest: 0.2              # 20% latest versions
+      recent: 0.3              # 30% recent versions
+      older: 0.4               # 40% older versions
+      legacy: 0.1              # 10% legacy versions
+
+# Software count ranges (lower diversity)
+software_count_ranges:
+  Desktop:
+    min: 5
+    max: 15                    # Limited software diversity
+  Laptop:
+    min: 5
+    max: 12
+  Server:
+    min: 8
+    max: 20
+  Webserver:
+    min: 6
+    max: 15
+  Storage server:
+    min: 4
+    max: 10
+  Workstation:
+    min: 8
+    max: 18
+  Mobile device:
+    min: 10
+    max: 25
+  Firewall:
+    min: 2
+    max: 8
+  Router:
+    min: 1
+    max: 5

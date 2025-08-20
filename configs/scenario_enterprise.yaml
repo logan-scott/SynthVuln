@@ -1,0 +1,911 @@
+# Global Enterprise Scenario Configuration
+# ~5,000 assets, hybrid environment: on-prem + AWS/Azure/GCP
+# Diverse OS families, complex networks, many internet-exposed systems
+# Higher variance in vulnerabilities
+
+# Override default file paths for scenario-specific outputs
+default_paths:
+  asset_output: data/outputs/scenario_enterprise_assets.json
+  findings_output: data/outputs/scenario_enterprise_findings.json
+  nvd_data_dir: data/inputs/
+  cpe_mapping_config: configs/cpe_mapping_config.json
+
+# Fixed seed for reproducible enterprise scenario
+random_seed: 54321
+
+# Asset type definitions - comprehensive enterprise list
+asset_types:
+- Desktop                 # End-user workstations
+- Laptop                  # Portable end-user devices
+- Mobile device           # Smartphones, tablets
+- Workstation             # High-performance user systems
+- Server                  # Generic server systems
+- Webserver               # HTTP/HTTPS serving systems
+- Storage server          # File/block storage systems
+- Virtualization server   # Hypervisor hosts
+- Virtual machine         # Guest VMs
+- Container               # Containerized applications
+- Kubernetes cluster      # Container orchestration
+- Serverless              # Function-as-a-Service
+- Database server         # Data storage systems
+- Application server      # Business logic tier
+- Mail server             # Email infrastructure
+- Firewall                # Network security appliances
+- Load balancer           # Traffic distribution
+- Router                  # Network routing devices
+- Switch                  # Network switching devices
+- Proxy server            # Forward/reverse proxies
+- DNS server              # Domain name resolution
+- DHCP server             # IP address assignment
+- Identity server         # Authentication/authorization
+- VPN server              # Remote access gateways
+
+# Asset type to general category mapping for CPE-based software generation
+asset_general_type_mapping:
+  Desktop: workstation
+  Laptop: workstation
+  Mobile device: mobile
+  Workstation: workstation
+  Server: server
+  Webserver: server
+  Storage server: server
+  Virtualization server: server
+  Virtual machine: server
+  Container: server
+  Kubernetes cluster: server
+  Serverless: server
+  Database server: server
+  Application server: server
+  Mail server: server
+  Firewall: network
+  Load balancer: network
+  Router: network
+  Switch: network
+  Proxy server: server
+  DNS server: server
+  DHCP server: server
+  Identity server: server
+  VPN server: server
+
+# Location definitions - enterprise network zones
+locations:
+- Remote                  # Work-from-home, mobile users
+- Internal                # Corporate LAN/office networks
+- Data center             # On-premises server facilities
+- Cloud                   # Public cloud deployments
+
+# Common ports used across different asset types
+common_ports:
+- 22                      # SSH
+- 80                      # HTTP
+- 443                     # HTTPS
+- 3389                    # RDP
+- 8080                    # Alternative HTTP
+- 8443                    # Alternative HTTPS
+- 3306                    # MySQL
+- 5432                    # PostgreSQL
+
+# Operating system definitions - comprehensive enterprise list
+operating_systems:
+  Windows:
+    - Windows 11 Pro
+    - Windows 11 Enterprise
+    - Windows 11 Home
+    - Windows 10 Pro
+    - Windows 10 Home
+    - Windows 10 Enterprise
+    - Windows Server 2025
+    - Windows Server 2022
+    - Windows Server 2019
+    - Windows Server 2016
+    - Windows Server 2012 R2
+  Linux:
+    - Ubuntu 24.04 LTS
+    - Ubuntu 22.04 LTS
+    - Ubuntu 20.04 LTS
+    - Ubuntu 18.04 LTS
+    - Red Hat Enterprise Linux 9.6
+    - Red Hat Enterprise Linux 9.5
+    - Red Hat Enterprise Linux 8.10
+    - Red Hat Enterprise Linux 8.9
+    - Red Hat Enterprise Linux 7.9
+    - CentOS 8
+    - CentOS 7
+    - SUSE Linux Enterprise Server 15
+    - SUSE Linux Enterprise Server 12
+    - Debian 12
+    - Debian 11
+    - Debian 10
+    - Amazon Linux 2023
+    - Amazon Linux 2
+  macOS:
+    - macOS Sequoia 15
+    - macOS Sonoma 14
+    - macOS Ventura 13
+    - macOS Monterey 12
+    - macOS Big Sur 11
+  Mobile:
+    - iOS 18
+    - iOS 17
+    - iOS 16
+    - iOS 15
+    - Android 15
+    - Android 14
+    - Android 13
+    - Android 12
+  Virtualization:
+    - VMware vSphere 9.0
+    - VMware vSphere 8.0
+    - VMware vSphere 7.0
+    - Microsoft Hyper-V 2022
+    - Microsoft Hyper-V 2019
+    - Citrix XenServer 8
+    - Proxmox VE 8.4
+    - Proxmox VE 8.3
+  Container:
+    - Docker Engine 27
+    - Docker Engine 26
+    - Docker Engine 25
+    - Kubernetes 1.33
+    - Kubernetes 1.32
+    - Kubernetes 1.31
+    - OpenShift 4.19
+    - OpenShift 4.18
+  Network:
+    - Cisco IOS 15.5
+    - Cisco IOS 15.4
+    - Cisco IOS XE 17.17
+    - Cisco IOS XE 17.16
+    - PAN-OS 11.2
+    - PAN-OS 11.1
+    - PAN-OS 10.2
+    - pfSense 2.9
+    - pfSense 2.8
+    - pfSense 2.7
+  Embedded:
+    - Embedded Linux
+    - FreeRTOS
+    - VxWorks
+
+# Asset lifecycle stage definitions
+lifecycle_stages:
+  - Production            # Live, business-critical systems
+  - Development           # Development and testing environments
+  - Staging               # Pre-production testing and validation
+  - Testing               # Quality assurance and testing
+  - Decommissioned        # End-of-life, scheduled for removal
+  - Maintenance           # Temporarily offline for updates/repairs
+  - Pilot                 # Proof-of-concept or trial deployments
+  - Backup                # Standby systems for disaster recovery
+
+# Asset to operating system mapping
+asset_os_mapping:
+  Desktop:
+    - Windows
+    - macOS
+    - Linux
+  Laptop:
+    - Windows
+    - macOS
+    - Linux
+  Mobile device:
+    - Mobile
+  Workstation:
+    - Windows
+    - macOS
+    - Linux
+  Server:
+    - Windows
+    - Linux
+  Webserver:
+    - Windows
+    - Linux
+  Storage server:
+    - Windows
+    - Linux
+  Virtualization server:
+    - Virtualization
+    - Windows
+    - Linux
+  Virtual machine:
+    - Windows
+    - Linux
+  Container:
+    - Container
+    - Linux
+  Kubernetes cluster:
+    - Container
+    - Linux
+  Serverless:
+    - Container
+    - Linux
+  Database server:
+    - Windows
+    - Linux
+  Application server:
+    - Windows
+    - Linux
+  Mail server:
+    - Windows
+    - Linux
+  Firewall:
+    - Network
+    - Embedded
+    - Linux
+  Load balancer:
+    - Network
+    - Linux
+  Router:
+    - Network
+    - Embedded
+  Switch:
+    - Network
+    - Embedded
+  Proxy server:
+    - Windows
+    - Linux
+  DNS server:
+    - Windows
+    - Linux
+  DHCP server:
+    - Windows
+    - Linux
+  Identity server:
+    - Windows
+    - Linux
+  VPN server:
+    - Windows
+    - Linux
+
+# Asset to location mapping - enterprise distribution
+asset_location_mapping:
+  Desktop:
+    - Remote
+    - Internal
+  Laptop:
+    - Remote
+    - Internal
+  Mobile device:
+    - Remote
+  Workstation:
+    - Internal
+    - Data center
+  Server:
+    - Data center
+    - Cloud
+  Webserver:
+    - Data center
+    - Cloud
+  Storage server:
+    - Data center
+    - Cloud
+  Virtualization server:
+    - Data center
+    - Cloud
+  Virtual machine:
+    - Data center
+    - Cloud
+  Container:
+    - Data center
+    - Cloud
+  Kubernetes cluster:
+    - Data center
+    - Cloud
+  Serverless:
+    - Cloud
+  Database server:
+    - Data center
+    - Cloud
+  Application server:
+    - Data center
+    - Cloud
+  Mail server:
+    - Data center
+    - Cloud
+  Firewall:
+    - Internal
+    - Data center
+    - Cloud
+  Load balancer:
+    - Data center
+    - Cloud
+  Router:
+    - Internal
+    - Data center
+  Switch:
+    - Internal
+    - Data center
+  Proxy server:
+    - Internal
+    - Data center
+    - Cloud
+  DNS server:
+    - Internal
+    - Data center
+    - Cloud
+  DHCP server:
+    - Internal
+    - Data center
+  Identity server:
+    - Internal
+    - Data center
+    - Cloud
+  VPN server:
+    - Data center
+    - Cloud
+
+# Asset to port mapping - enterprise services
+asset_port_mapping:
+  Desktop:
+    - 3389
+  Laptop:
+    - 3389
+  Mobile device: []
+  Workstation:
+    - 3389
+    - 22
+  Server:
+    - 22
+    - 80
+    - 443
+  Webserver:
+    - 80
+    - 443
+    - 8080
+    - 8443
+  Storage server:
+    - 22
+    - 445
+    - 2049
+  Virtualization server:
+    - 22
+    - 443
+    - 902
+  Virtual machine:
+    - 22
+    - 80
+    - 443
+    - 3389
+  Container:
+    - 80
+    - 443
+    - 8080
+  Kubernetes cluster:
+    - 443
+    - 6443
+    - 8080
+  Serverless: []
+  Database server:
+    - 3306
+    - 5432
+    - 1433
+    - 1521
+  Application server:
+    - 80
+    - 443
+    - 8080
+    - 8443
+  Mail server:
+    - 25
+    - 110
+    - 143
+    - 993
+    - 995
+  Firewall:
+    - 22
+    - 443
+  Load balancer:
+    - 80
+    - 443
+    - 8080
+  Router:
+    - 22
+    - 23
+    - 80
+    - 443
+  Switch:
+    - 22
+    - 23
+    - 80
+    - 443
+  Proxy server:
+    - 80
+    - 443
+    - 3128
+    - 8080
+  DNS server:
+    - 53
+  DHCP server:
+    - 67
+    - 68
+  Identity server:
+    - 80
+    - 443
+    - 389
+    - 636
+  VPN server:
+    - 443
+    - 1194
+    - 500
+    - 4500
+
+# Internet exposure probabilities by asset type
+internet_exposure_probabilities:
+  Desktop: 0.05
+  Laptop: 0.10
+  Mobile device: 0.95
+  Workstation: 0.02
+  Server: 0.15
+  Webserver: 0.85
+  Storage server: 0.05
+  Virtualization server: 0.10
+  Virtual machine: 0.20
+  Container: 0.30
+  Kubernetes cluster: 0.25
+  Serverless: 0.90
+  Database server: 0.08
+  Application server: 0.40
+  Mail server: 0.70
+  Firewall: 0.95
+  Load balancer: 0.80
+  Router: 0.30
+  Switch: 0.05
+  Proxy server: 0.60
+  DNS server: 0.50
+  DHCP server: 0.02
+  Identity server: 0.30
+  VPN server: 0.95
+
+# Location-based exposure multipliers
+location_exposure_multipliers:
+  Remote: 1.5
+  Internal: 0.3
+  Data center: 0.8
+  Cloud: 2.0
+
+# Internal network configuration
+internal_network:
+  subnets:
+    - 10.0.0.0/8
+    - 172.16.0.0/12
+    - 192.168.0.0/16
+  vlan_ranges:
+    - 100-199
+    - 200-299
+    - 300-399
+
+# Public IP configuration
+public_ip:
+  cloud_providers:
+    - AWS
+    - Azure
+    - Google Cloud
+    - Oracle Cloud
+  ip_ranges:
+    - 203.0.113.0/24
+    - 198.51.100.0/24
+    - 192.0.2.0/24
+
+# Findings configuration for enterprise scenario
+findings_config:
+  # Detection tools used in enterprise environments
+  detection_tools:
+    - Nessus
+    - OpenVAS
+    - Qualys
+    - Rapid7
+    - Tenable
+    - Burp Suite
+    - OWASP ZAP
+    - Metasploit
+    - Nmap
+    - Nuclei
+
+  # Severity distribution weights for enterprise findings
+  severity_weights:
+    Critical: 0.15
+    High: 0.25
+    Medium: 0.35
+    Low: 0.20
+    Informational: 0.05
+
+  # Vulnerability count ranges by asset type
+  vulnerability_counts:
+    Desktop:
+      min: 5
+      max: 25
+    Laptop:
+      min: 5
+      max: 25
+    Mobile device:
+      min: 2
+      max: 15
+    Workstation:
+      min: 8
+      max: 35
+    Server:
+      min: 15
+      max: 50
+    Webserver:
+      min: 20
+      max: 60
+    Storage server:
+      min: 10
+      max: 40
+    Virtualization server:
+      min: 12
+      max: 45
+    Virtual machine:
+      min: 10
+      max: 35
+    Container:
+      min: 8
+      max: 30
+    Kubernetes cluster:
+      min: 15
+      max: 55
+    Serverless:
+      min: 3
+      max: 20
+    Database server:
+      min: 18
+      max: 55
+    Application server:
+      min: 20
+      max: 65
+    Mail server:
+      min: 15
+      max: 50
+    Firewall:
+      min: 5
+      max: 25
+    Load balancer:
+      min: 8
+      max: 30
+    Router:
+      min: 5
+      max: 20
+    Switch:
+      min: 3
+      max: 15
+    Proxy server:
+      min: 10
+      max: 35
+    DNS server:
+      min: 8
+      max: 25
+    DHCP server:
+      min: 5
+      max: 20
+    Identity server:
+      min: 12
+      max: 40
+    VPN server:
+      min: 10
+      max: 35
+
+  # Detection probability by severity
+  detection_probability:
+    Critical: 0.95
+    High: 0.85
+    Medium: 0.70
+    Low: 0.50
+    Informational: 0.30
+
+  # False positive rates by severity
+  false_positive_rate:
+    Critical: 0.02
+    High: 0.05
+    Medium: 0.10
+    Low: 0.15
+    Informational: 0.25
+
+  # Recent vulnerability bias (higher chance of recent CVEs)
+  recent_bias: 0.40
+
+# Performance configuration for enterprise scenario
+performance_config:
+  default_asset_count: 5000     # Target ~5,000 assets for enterprise
+  max_asset_batch_size: 1000    # Large batch size for efficiency
+  cache_duration_seconds: 3600
+  max_directory_scan_depth: 10
+  progress_report_interval: 100
+  hostname_adjective_count: 100
+  hostname_noun_count: 200
+  vuln_processing_batch_size: 500
+  max_retries: 3
+  cpe_processing_batch_size: 1000
+  cpe_cache_size: 10000
+
+# Asset type distribution for enterprise (diverse environment)
+asset_type_distribution:
+  Desktop: 25.0                # 25% - End-user workstations
+  Laptop: 20.0                 # 20% - Mobile workforce
+  Virtual machine: 12.0        # 12% - Extensive virtualization
+  Server: 8.0                  # 8% - Physical servers
+  Workstation: 6.0             # 6% - Specialized systems
+  Mobile device: 5.0           # 5% - Corporate mobile devices
+  Container: 4.0               # 4% - Containerized applications
+  Webserver: 3.5               # 3.5% - Web infrastructure
+  Application server: 3.0      # 3% - Business applications
+  Database server: 2.5         # 2.5% - Data infrastructure
+  Storage server: 2.0          # 2% - Storage systems
+  Kubernetes cluster: 1.5      # 1.5% - Container orchestration
+  Virtualization server: 1.2   # 1.2% - Hypervisor hosts
+  Load balancer: 1.0           # 1% - Traffic management
+  Mail server: 1.0             # 1% - Email infrastructure
+  Firewall: 0.8                # 0.8% - Security appliances
+  Proxy server: 0.7            # 0.7% - Proxy services
+  DNS server: 0.6              # 0.6% - DNS infrastructure
+  Identity server: 0.5         # 0.5% - Identity management
+  VPN server: 0.4              # 0.4% - Remote access
+  DHCP server: 0.3             # 0.3% - DHCP services
+  Router: 0.5                  # 0.5% - Network routing
+  Switch: 0.5                  # 0.5% - Network switching
+  Serverless: 0.5              # 0.5% - Function-as-a-Service
+
+# Operating system distribution (enterprise diversity)
+os_distribution_by_asset:
+  Desktop:
+    Windows: 70.0              # Windows dominance
+    macOS: 20.0                # Significant Mac presence
+    Linux: 10.0                # Linux workstations
+  Laptop:
+    Windows: 65.0
+    macOS: 25.0                # Higher Mac adoption
+    Linux: 10.0
+  Server:
+    Linux: 75.0                # Linux server preference
+    Windows: 25.0
+  Virtual machine:
+    Linux: 65.0
+    Windows: 30.0
+    macOS: 5.0
+  Webserver:
+    Linux: 85.0                # Strong Linux preference
+    Windows: 15.0
+  Application server:
+    Linux: 70.0
+    Windows: 30.0
+  Database server:
+    Linux: 80.0
+    Windows: 20.0
+  Storage server:
+    Linux: 70.0
+    Windows: 30.0
+  Container:
+    Container: 80.0            # Container-native
+    Linux: 20.0
+  Kubernetes cluster:
+    Container: 90.0
+    Linux: 10.0
+  Serverless:
+    Container: 95.0
+    Linux: 5.0
+  Virtualization server:
+    Virtualization: 70.0
+    Linux: 20.0
+    Windows: 10.0
+  Workstation:
+    Windows: 55.0
+    macOS: 30.0
+    Linux: 15.0
+  Mobile device:
+    Mobile: 100.0
+  Mail server:
+    Linux: 65.0
+    Windows: 35.0
+  Firewall:
+    Network: 80.0
+    Linux: 15.0
+    Embedded: 5.0
+  Load balancer:
+    Network: 60.0
+    Linux: 40.0
+  Proxy server:
+    Linux: 85.0
+    Windows: 15.0
+  DNS server:
+    Linux: 80.0
+    Windows: 20.0
+  Identity server:
+    Windows: 55.0              # Active Directory prevalence
+    Linux: 45.0
+  VPN server:
+    Linux: 70.0
+    Windows: 30.0
+  DHCP server:
+    Linux: 75.0
+    Windows: 25.0
+  Router:
+    Network: 85.0
+    Embedded: 15.0
+  Switch:
+    Network: 90.0
+    Embedded: 10.0
+
+# Lifecycle stage distribution (enterprise complexity)
+lifecycle_stage_distribution:
+  Production: 55.0             # Lower production percentage
+  Development: 20.0            # Extensive dev environments
+  Staging: 10.0                # Comprehensive staging
+  Testing: 8.0                 # Dedicated testing
+  Pilot: 3.0                   # Innovation projects
+  Maintenance: 2.0
+  Decommissioned: 1.5
+  Backup: 0.5
+
+# Location distribution (hybrid cloud)
+asset_location_distribution:
+  Internal: 35.0               # On-premises corporate
+  Cloud: 30.0                  # Significant cloud adoption
+  Data center: 20.0            # Enterprise data centers
+  Remote: 15.0                 # Remote workforce
+
+# Cloud provider distribution (multi-cloud strategy)
+cloud_service_providers:
+  distribution:
+    aws: 35.0                  # AWS leadership
+    azure: 30.0                # Microsoft integration
+    gcp: 20.0                  # Google services
+    other: 15.0                # Other providers
+
+# Security features (enterprise security)
+security_features:
+  endpoint_security:
+    default_probability: 0.9   # 90% coverage
+  local_firewall:
+    default_probability: 0.8   # 80% coverage
+
+# Findings configuration (higher severity variance)
+findings_config:
+  detection_tools:
+  - Nessus
+  - Qualys
+  - Rapid7
+  - Tenable.io
+  - OpenVAS
+  - Nexpose
+  - Acunetix
+  
+  # Enterprise severity distribution
+  severity_weights:
+    CRITICAL: 8                # 8% - More critical findings
+    HIGH: 20                   # 20% - Significant high severity
+    MEDIUM: 35                 # 35% - Moderate issues
+    LOW: 37                    # 37% - Lower percentage of low
+  
+  # Vulnerability counts (higher range)
+  vulnerability_counts:
+    min: 2
+    max: 12                    # More vulnerabilities per asset
+  
+  max_unique_vulns: 8000       # Large vulnerability pool
+  detection_probability: 0.8   # 80% detection rate
+  false_positive_rate: 0.08    # 8% false positive rate
+  
+  recent_bias:
+    enabled: true
+    cutoff_years: 2            # Focus on recent vulnerabilities
+    multiplier: 3.5            # Strong bias towards recent
+    
+    year_weights:
+      2025_and_later: 0.45     # Higher weight for latest
+      2024: 0.35
+      2023: 0.15
+      2020_to_2022: 0.03
+      2015_to_2019: 0.015
+      before_2015: 0.005
+      malformed: 0.005
+
+# CPE configuration (comprehensive)
+cpe_config:
+  enabled: true
+  use_cpe_pools: true
+  min_confidence_threshold: 0.1  # Lower threshold for diversity
+  prefer_versioned_cpes: true
+  
+  cpe_based_asset_generation:
+    enabled: true
+    max_cpes_per_asset_type: 100  # High CPE diversity
+    version_distribution:
+      latest: 0.35             # 35% latest versions
+      recent: 0.30             # 30% recent versions
+      older: 0.25              # 25% older versions
+      legacy: 0.10             # 10% legacy versions
+
+# Software count ranges (high diversity)
+software_count_ranges:
+  Desktop:
+    min: 15
+    max: 40                    # High software diversity
+  Laptop:
+    min: 12
+    max: 35
+  Server:
+    min: 20
+    max: 60
+  Virtual machine:
+    min: 15
+    max: 50
+  Webserver:
+    min: 18
+    max: 45
+  Application server:
+    min: 25
+    max: 70
+  Database server:
+    min: 15
+    max: 40
+  Storage server:
+    min: 10
+    max: 30
+  Container:
+    min: 8
+    max: 25
+  Kubernetes cluster:
+    min: 20
+    max: 80
+  Serverless:
+    min: 5
+    max: 15
+  Virtualization server:
+    min: 25
+    max: 60
+  Workstation:
+    min: 20
+    max: 50
+  Mobile device:
+    min: 15
+    max: 40
+  Mail server:
+    min: 12
+    max: 35
+  Firewall:
+    min: 5
+    max: 20
+  Load balancer:
+    min: 8
+    max: 25
+  Proxy server:
+    min: 10
+    max: 30
+  DNS server:
+    min: 6
+    max: 18
+  Identity server:
+    min: 15
+    max: 40
+  VPN server:
+    min: 8
+    max: 25
+  DHCP server:
+    min: 4
+    max: 12
+  Router:
+    min: 3
+    max: 10
+  Switch:
+    min: 2
+    max: 8
+
+# Internet exposure configuration (higher exposure)
+internet_exposure:
+  probability: 0.25            # 25% of assets internet-exposed
+  
+# Network configuration (complex enterprise networks)
+internal_networks:
+  corporate:
+    ip_ranges:
+      - "10.0.0.0/8"           # Large corporate range
+      - "172.16.0.0/12"        # Additional private ranges
+      - "192.168.0.0/16"       # Legacy networks
+  dmz:
+    ip_ranges:
+      - "203.0.113.0/24"       # Public DMZ range
+      - "198.51.100.0/24"      # Additional DMZ
+  cloud:
+    ip_ranges:
+      - "10.100.0.0/16"        # Cloud VPC ranges
+      - "10.200.0.0/16"
+      - "10.300.0.0/16"

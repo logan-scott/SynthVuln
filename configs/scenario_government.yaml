@@ -1,0 +1,897 @@
+# Regional Government Agency Scenario Configuration
+# ~500 assets, legacy systems bias, high security requirements
+# Windows-heavy environment with older OS versions
+# Moderate vulnerability variance with compliance focus
+
+# Override default file paths for scenario-specific outputs
+default_paths:
+  asset_output: data/outputs/scenario_government_assets.json
+  findings_output: data/outputs/scenario_government_findings.json
+  nvd_data_dir: data/inputs/
+  cpe_mapping_config: configs/cpe_mapping_config.json
+
+# Fixed seed for reproducible government scenario
+random_seed: 98765
+
+# Asset type definitions - government-focused list with legacy emphasis
+asset_types:
+- Desktop                 # End-user workstations
+- Laptop                  # Portable end-user devices
+- Workstation             # High-performance user systems
+- Server                  # Generic server systems
+- Webserver               # HTTP/HTTPS serving systems
+- Storage server          # File/block storage systems
+- Virtualization server   # Hypervisor hosts
+- Virtual machine         # Guest VMs
+- Database server         # Data storage systems
+- Application server      # Business logic tier
+- Mail server             # Email infrastructure
+- Firewall                # Network security appliances
+- Router                  # Network routing devices
+- Switch                  # Network switching devices
+- DNS server              # Domain name resolution
+- DHCP server             # IP address assignment
+- Identity server         # Authentication/authorization
+- VPN server              # Remote access gateways
+- Mainframe               # Legacy mainframe systems
+- Terminal server         # Legacy terminal access
+- Print server            # Document printing services
+- File server             # Centralized file storage
+
+# Asset type to general category mapping for CPE-based software generation
+asset_general_type_mapping:
+  Desktop: workstation
+  Laptop: workstation
+  Workstation: workstation
+  Server: server
+  Webserver: server
+  Storage server: server
+  Virtualization server: server
+  Virtual machine: server
+  Database server: server
+  Application server: server
+  Mail server: server
+  Firewall: network
+  Router: network
+  Switch: network
+  DNS server: server
+  DHCP server: server
+  Identity server: server
+  VPN server: server
+  Mainframe: server
+  Terminal server: server
+  Print server: server
+  File server: server
+
+# Location definitions - government network zones
+locations:
+- Remote                  # Work-from-home, mobile users
+- Internal                # Government office networks
+- Data center             # Government data facilities
+- Classified              # Secure/classified networks
+
+# Common ports used across different asset types
+common_ports:
+- 22                      # SSH
+- 23                      # Telnet (legacy)
+- 80                      # HTTP
+- 443                     # HTTPS
+- 3389                    # RDP
+- 21                      # FTP (legacy)
+- 25                      # SMTP
+- 53                      # DNS
+- 135                     # RPC
+- 445                     # SMB
+
+# Operating system definitions - government-focused with legacy emphasis
+operating_systems:
+  Windows:
+    - Windows 11 Pro
+    - Windows 11 Enterprise
+    - Windows 10 Pro
+    - Windows 10 Enterprise
+    - Windows 8.1 Pro
+    - Windows 7 Professional
+    - Windows Server 2022
+    - Windows Server 2019
+    - Windows Server 2016
+    - Windows Server 2012 R2
+    - Windows Server 2008 R2
+    - Windows XP Professional
+  Linux:
+    - Red Hat Enterprise Linux 9.6
+    - Red Hat Enterprise Linux 8.10
+    - Red Hat Enterprise Linux 7.9
+    - Red Hat Enterprise Linux 6.10
+    - CentOS 8
+    - CentOS 7
+    - CentOS 6
+    - Ubuntu 22.04 LTS
+    - Ubuntu 20.04 LTS
+    - Ubuntu 18.04 LTS
+    - SUSE Linux Enterprise Server 15
+    - SUSE Linux Enterprise Server 12
+    - SUSE Linux Enterprise Server 11
+    - Debian 11
+    - Debian 10
+    - Debian 9
+  Unix:
+    - AIX 7.3
+    - AIX 7.2
+    - AIX 6.1
+    - Solaris 11.4
+    - Solaris 10
+    - HP-UX 11.31
+  Legacy:
+    - OS/390
+    - z/OS 2.5
+    - z/OS 2.4
+    - OpenVMS 8.4
+    - OpenVMS 7.3
+  Network:
+    - Cisco IOS 15.5
+    - Cisco IOS 15.1
+    - Cisco IOS 12.4
+    - Juniper JUNOS 22.4
+    - Juniper JUNOS 21.4
+    - pfSense 2.7
+    - pfSense 2.6
+  Embedded:
+    - Embedded Linux
+    - VxWorks
+    - QNX
+
+# Asset lifecycle stage definitions
+lifecycle_stages:
+  - Production            # Live, mission-critical systems
+  - Development           # Development and testing environments
+  - Testing               # Quality assurance and testing
+  - Legacy                # End-of-life but still operational
+  - Decommissioned        # Scheduled for removal
+  - Maintenance           # Temporarily offline for updates/repairs
+  - Classified            # Secure/classified operations
+  - Archive               # Long-term data retention systems
+
+# Asset to operating system mapping
+asset_os_mapping:
+  Desktop:
+    - Windows
+    - Linux
+  Laptop:
+    - Windows
+    - Linux
+  Workstation:
+    - Windows
+    - Linux
+    - Unix
+  Server:
+    - Windows
+    - Linux
+    - Unix
+  Webserver:
+    - Windows
+    - Linux
+  Storage server:
+    - Windows
+    - Linux
+    - Unix
+  Virtualization server:
+    - Windows
+    - Linux
+  Virtual machine:
+    - Windows
+    - Linux
+  Database server:
+    - Windows
+    - Linux
+    - Unix
+  Application server:
+    - Windows
+    - Linux
+    - Unix
+  Mail server:
+    - Windows
+    - Linux
+  Firewall:
+    - Network
+    - Embedded
+    - Linux
+  Router:
+    - Network
+    - Embedded
+  Switch:
+    - Network
+    - Embedded
+  DNS server:
+    - Windows
+    - Linux
+  DHCP server:
+    - Windows
+    - Linux
+  Identity server:
+    - Windows
+    - Linux
+  VPN server:
+    - Windows
+    - Linux
+  Mainframe:
+    - Legacy
+  Terminal server:
+    - Windows
+    - Linux
+    - Unix
+  Print server:
+    - Windows
+    - Linux
+  File server:
+    - Windows
+    - Linux
+    - Unix
+
+# Asset to location mapping - government distribution
+asset_location_mapping:
+  Desktop:
+    - Remote
+    - Internal
+  Laptop:
+    - Remote
+    - Internal
+  Workstation:
+    - Internal
+    - Data center
+    - Classified
+  Server:
+    - Data center
+    - Classified
+  Webserver:
+    - Data center
+    - Internal
+  Storage server:
+    - Data center
+    - Classified
+  Virtualization server:
+    - Data center
+    - Classified
+  Virtual machine:
+    - Data center
+    - Classified
+  Database server:
+    - Data center
+    - Classified
+  Application server:
+    - Data center
+    - Internal
+  Mail server:
+    - Data center
+    - Internal
+  Firewall:
+    - Internal
+    - Data center
+    - Classified
+  Router:
+    - Internal
+    - Data center
+  Switch:
+    - Internal
+    - Data center
+  DNS server:
+    - Internal
+    - Data center
+  DHCP server:
+    - Internal
+    - Data center
+  Identity server:
+    - Internal
+    - Data center
+    - Classified
+  VPN server:
+    - Data center
+  Mainframe:
+    - Data center
+    - Classified
+  Terminal server:
+    - Internal
+    - Data center
+  Print server:
+    - Internal
+    - Data center
+  File server:
+    - Internal
+    - Data center
+    - Classified
+
+# Asset to port mapping - government services with legacy protocols
+asset_port_mapping:
+  Desktop:
+    - 3389
+    - 135
+  Laptop:
+    - 3389
+    - 135
+  Workstation:
+    - 3389
+    - 22
+    - 23
+  Server:
+    - 22
+    - 23
+    - 80
+    - 443
+    - 135
+  Webserver:
+    - 80
+    - 443
+  Storage server:
+    - 22
+    - 445
+    - 21
+  Virtualization server:
+    - 22
+    - 443
+    - 902
+  Virtual machine:
+    - 22
+    - 80
+    - 443
+    - 3389
+    - 23
+  Database server:
+    - 1433
+    - 3306
+    - 5432
+    - 1521
+  Application server:
+    - 80
+    - 443
+    - 8080
+  Mail server:
+    - 25
+    - 110
+    - 143
+    - 993
+    - 995
+  Firewall:
+    - 22
+    - 23
+    - 443
+  Router:
+    - 22
+    - 23
+    - 80
+    - 443
+  Switch:
+    - 22
+    - 23
+    - 80
+  DNS server:
+    - 53
+  DHCP server:
+    - 67
+    - 68
+  Identity server:
+    - 80
+    - 443
+    - 389
+    - 636
+  VPN server:
+    - 443
+    - 1194
+    - 500
+  Mainframe:
+    - 23
+    - 992
+    - 993
+  Terminal server:
+    - 3389
+    - 22
+    - 23
+  Print server:
+    - 515
+    - 631
+    - 9100
+  File server:
+    - 21
+    - 22
+    - 445
+    - 2049
+
+# Internet exposure probabilities by asset type (lower for government)
+internet_exposure_probabilities:
+  Desktop: 0.02
+  Laptop: 0.05
+  Workstation: 0.01
+  Server: 0.08
+  Webserver: 0.30
+  Storage server: 0.01
+  Virtualization server: 0.02
+  Virtual machine: 0.05
+  Database server: 0.02
+  Application server: 0.15
+  Mail server: 0.25
+  Firewall: 0.80
+  Router: 0.15
+  Switch: 0.02
+  DNS server: 0.20
+  DHCP server: 0.01
+  Identity server: 0.10
+  VPN server: 0.90
+  Mainframe: 0.01
+  Terminal server: 0.05
+  Print server: 0.02
+  File server: 0.03
+
+# Location-based exposure multipliers
+location_exposure_multipliers:
+  Remote: 1.2
+  Internal: 0.1
+  Data center: 0.3
+  Classified: 0.05
+
+# Internal network configuration
+internal_network:
+  subnets:
+    - 10.0.0.0/8
+    - 172.16.0.0/12
+    - 192.168.0.0/16
+  vlan_ranges:
+    - 10-99
+    - 100-199
+    - 200-299
+
+# Public IP configuration (limited for government)
+public_ip:
+  cloud_providers:
+    - AWS GovCloud
+    - Azure Government
+  ip_ranges:
+    - 198.51.100.0/24
+    - 203.0.113.0/24
+
+# Findings configuration for government scenario
+findings_config:
+  # Detection tools used in government environments
+  detection_tools:
+    - Nessus
+    - OpenVAS
+    - Rapid7
+    - Retina
+    - SAINT
+    - Nmap
+    - MBSA
+
+  # Severity distribution weights for government findings
+  severity_weights:
+    Critical: 0.20
+    High: 0.30
+    Medium: 0.30
+    Low: 0.15
+    Informational: 0.05
+
+  # Vulnerability count ranges by asset type (higher for legacy systems)
+  vulnerability_counts:
+    Desktop:
+      min: 8
+      max: 35
+    Laptop:
+      min: 8
+      max: 35
+    Workstation:
+      min: 12
+      max: 45
+    Server:
+      min: 20
+      max: 70
+    Webserver:
+      min: 25
+      max: 80
+    Storage server:
+      min: 15
+      max: 55
+    Virtualization server:
+      min: 18
+      max: 60
+    Virtual machine:
+      min: 15
+      max: 50
+    Database server:
+      min: 25
+      max: 75
+    Application server:
+      min: 30
+      max: 85
+    Mail server:
+      min: 20
+      max: 65
+    Firewall:
+      min: 10
+      max: 40
+    Router:
+      min: 8
+      max: 30
+    Switch:
+      min: 5
+      max: 25
+    DNS server:
+      min: 12
+      max: 40
+    DHCP server:
+      min: 8
+      max: 30
+    Identity server:
+      min: 18
+      max: 55
+    VPN server:
+      min: 15
+      max: 50
+    Mainframe:
+      min: 30
+      max: 100
+    Terminal server:
+      min: 20
+      max: 65
+    Print server:
+      min: 10
+      max: 35
+    File server:
+      min: 15
+      max: 50
+
+  # Detection probability by severity
+  detection_probability:
+    Critical: 0.90
+    High: 0.80
+    Medium: 0.65
+    Low: 0.45
+    Informational: 0.25
+
+  # False positive rates by severity
+  false_positive_rate:
+    Critical: 0.03
+    High: 0.08
+    Medium: 0.15
+    Low: 0.20
+    Informational: 0.30
+
+  # Recent vulnerability bias (lower for government due to legacy systems)
+  recent_bias: 0.25
+
+# Performance configuration for government scenario
+performance_config:
+  default_asset_count: 500      # Target ~500 assets for government
+  max_asset_batch_size: 200     # Moderate batch size
+  cache_duration_seconds: 3600
+  max_directory_scan_depth: 8
+  progress_report_interval: 50
+  hostname_adjective_count: 50
+  hostname_noun_count: 100
+  vuln_processing_batch_size: 200
+  max_retries: 3
+  cpe_processing_batch_size: 500
+  cpe_cache_size: 5000
+  batch_size: 50
+  max_workers: 4
+  memory_limit_gb: 8
+
+# Asset type distribution for government (traditional IT)
+asset_type_distribution:
+  Desktop: 35.0                # 35% - Government workstations
+  Laptop: 15.0                 # 15% - Limited mobile workforce
+  Server: 12.0                 # 12% - Physical servers
+  Workstation: 8.0             # 8% - Specialized government systems
+  Virtual machine: 7.0         # 7% - Limited virtualization
+  Database server: 5.0         # 5% - Government databases
+  Webserver: 4.0               # 4% - Public-facing websites
+  Application server: 3.5      # 3.5% - Government applications
+  Mail server: 2.5             # 2.5% - Email infrastructure
+  Storage server: 2.0          # 2% - Document storage
+  Firewall: 1.5                # 1.5% - Security appliances
+  DNS server: 1.0              # 1% - DNS infrastructure
+  Identity server: 1.0         # 1% - Active Directory
+  Load balancer: 0.8           # 0.8% - Load balancing
+  Proxy server: 0.7            # 0.7% - Web proxy
+  Router: 0.5                  # 0.5% - Network routing
+  Switch: 0.5                  # 0.5% - Network switching
+  VPN server: 0.3              # 0.3% - Secure remote access
+  DHCP server: 0.2             # 0.2% - DHCP services
+  Mobile device: 0.5           # 0.5% - Limited mobile devices
+  Container: 0.2               # 0.2% - Minimal containerization
+  Kubernetes cluster: 0.1      # 0.1% - Very limited orchestration
+  Virtualization server: 0.3   # 0.3% - Limited virtualization hosts
+  Serverless: 0.0              # 0% - No serverless adoption
+
+# Operating system distribution (Windows-heavy, legacy bias)
+os_distribution_by_asset:
+  Desktop:
+    Windows: 90.0              # Heavy Windows dominance
+    Linux: 8.0                 # Limited Linux adoption
+    macOS: 2.0                 # Minimal Mac presence
+  Laptop:
+    Windows: 85.0
+    Linux: 10.0
+    macOS: 5.0
+  Server:
+    Windows: 60.0              # Windows Server preference
+    Linux: 40.0
+  Virtual machine:
+    Windows: 65.0
+    Linux: 35.0
+  Webserver:
+    Windows: 45.0              # Mixed web environment
+    Linux: 55.0
+  Application server:
+    Windows: 70.0              # Windows application preference
+    Linux: 30.0
+  Database server:
+    Windows: 55.0              # SQL Server prevalence
+    Linux: 45.0
+  Storage server:
+    Windows: 75.0              # Windows file servers
+    Linux: 25.0
+  Container:
+    Linux: 80.0
+    Container: 20.0
+  Kubernetes cluster:
+    Container: 70.0
+    Linux: 30.0
+  Virtualization server:
+    Windows: 40.0
+    Virtualization: 35.0
+    Linux: 25.0
+  Workstation:
+    Windows: 85.0
+    Linux: 10.0
+    macOS: 5.0
+  Mobile device:
+    Mobile: 100.0
+  Mail server:
+    Windows: 80.0              # Exchange Server dominance
+    Linux: 20.0
+  Firewall:
+    Network: 70.0
+    Linux: 20.0
+    Windows: 10.0
+  Load balancer:
+    Network: 50.0
+    Windows: 30.0
+    Linux: 20.0
+  Proxy server:
+    Windows: 60.0              # Windows proxy solutions
+    Linux: 40.0
+  DNS server:
+    Windows: 70.0              # Windows DNS
+    Linux: 30.0
+  Identity server:
+    Windows: 95.0              # Active Directory dominance
+    Linux: 5.0
+  VPN server:
+    Windows: 65.0
+    Linux: 35.0
+  DHCP server:
+    Windows: 80.0
+    Linux: 20.0
+  Router:
+    Network: 90.0
+    Embedded: 10.0
+  Switch:
+    Network: 95.0
+    Embedded: 5.0
+
+# Lifecycle stage distribution (production-focused)
+lifecycle_stage_distribution:
+  Production: 75.0             # High production percentage
+  Development: 8.0             # Limited dev environments
+  Staging: 5.0                 # Basic staging
+  Testing: 4.0                 # Limited testing
+  Maintenance: 3.0             # Legacy maintenance
+  Pilot: 2.0                   # Conservative pilots
+  Backup: 2.0                  # Backup systems
+  Decommissioned: 1.0          # Slow decommissioning
+
+# Location distribution (primarily on-premises)
+asset_location_distribution:
+  Internal: 70.0               # On-premises government facilities
+  Data center: 20.0            # Government data centers
+  Remote: 8.0                  # Limited remote work
+  Cloud: 2.0                   # Minimal cloud adoption
+
+# Cloud provider distribution (limited cloud usage)
+cloud_service_providers:
+  distribution:
+    aws: 40.0                  # AWS GovCloud
+    azure: 35.0                # Azure Government
+    gcp: 15.0                  # Google Cloud for Government
+    other: 10.0                # Other government-approved
+
+# Security features (high security requirements)
+security_features:
+  endpoint_security:
+    default_probability: 0.95  # 95% coverage - high security
+  local_firewall:
+    default_probability: 0.9   # 90% coverage - strict policies
+
+# Findings configuration (compliance-focused)
+findings_config:
+  detection_tools:
+  - Nessus
+  - Rapid7
+  - Tenable.io
+  - ACAS                       # Government-specific tools
+  - Retina
+  - OpenVAS
+  
+  # Government severity distribution (compliance focus)
+  severity_weights:
+    CRITICAL: 5                # 5% - Lower critical findings
+    HIGH: 15                   # 15% - Moderate high severity
+    MEDIUM: 40                 # 40% - Focus on medium issues
+    LOW: 40                    # 40% - Many low-severity findings
+  
+  # Vulnerability counts (moderate range)
+  vulnerability_counts:
+    min: 1
+    max: 8                     # Moderate vulnerabilities per asset
+  
+  max_unique_vulns: 3000       # Moderate vulnerability pool
+  detection_probability: 0.85  # 85% detection rate - thorough scanning
+  false_positive_rate: 0.05    # 5% false positive rate - careful analysis
+  
+  recent_bias:
+    enabled: true
+    cutoff_years: 3            # Longer focus on vulnerabilities
+    multiplier: 2.5            # Moderate bias towards recent
+    
+    year_weights:
+      2025_and_later: 0.25     # Lower weight for latest
+      2024: 0.30
+      2023: 0.25
+      2020_to_2022: 0.12
+      2015_to_2019: 0.05
+      before_2015: 0.02
+      malformed: 0.01
+
+# CPE configuration (conservative)
+cpe_config:
+  enabled: true
+  use_cpe_pools: true
+  min_confidence_threshold: 0.3  # Higher threshold for accuracy
+  prefer_versioned_cpes: true
+  
+  cpe_based_asset_generation:
+    enabled: true
+    max_cpes_per_asset_type: 50   # Moderate CPE diversity
+    version_distribution:
+      latest: 0.15             # 15% latest versions
+      recent: 0.25             # 25% recent versions
+      older: 0.35              # 35% older versions
+      legacy: 0.25             # 25% legacy versions - high legacy
+
+# Software count ranges (moderate diversity)
+software_count_ranges:
+  Desktop:
+    min: 8
+    max: 25                    # Moderate software diversity
+  Laptop:
+    min: 6
+    max: 20
+  Server:
+    min: 12
+    max: 35
+  Virtual machine:
+    min: 10
+    max: 30
+  Webserver:
+    min: 10
+    max: 25
+  Application server:
+    min: 15
+    max: 40
+  Database server:
+    min: 8
+    max: 25
+  Storage server:
+    min: 6
+    max: 20
+  Container:
+    min: 5
+    max: 15
+  Kubernetes cluster:
+    min: 10
+    max: 30
+  Virtualization server:
+    min: 15
+    max: 35
+  Workstation:
+    min: 10
+    max: 30
+  Mobile device:
+    min: 8
+    max: 20
+  Mail server:
+    min: 8
+    max: 20
+  Firewall:
+    min: 3
+    max: 12
+  Load balancer:
+    min: 5
+    max: 15
+  Proxy server:
+    min: 6
+    max: 18
+  DNS server:
+    min: 4
+    max: 12
+  Identity server:
+    min: 10
+    max: 25
+  VPN server:
+    min: 5
+    max: 15
+  DHCP server:
+    min: 3
+    max: 8
+  Router:
+    min: 2
+    max: 6
+  Switch:
+    min: 1
+    max: 4
+
+# Internet exposure configuration (limited exposure)
+internet_exposure:
+  probability: 0.08            # 8% of assets internet-exposed - security focus
+  
+# Network configuration (traditional government networks)
+internal_networks:
+  corporate:
+    ip_ranges:
+      - "10.0.0.0/8"           # Government network ranges
+      - "172.16.0.0/12"        # Additional internal ranges
+  dmz:
+    ip_ranges:
+      - "203.0.113.0/24"       # Limited DMZ
+  secure:
+    ip_ranges:
+      - "192.168.100.0/24"     # Secure government networks
+      - "192.168.200.0/24"     # Classified networks
+  backup:
+    ip_ranges:
+      - "10.255.0.0/16"        # Backup network ranges
+
+# Government-specific configurations
+government_specific:
+  compliance_frameworks:
+    - FISMA
+    - NIST
+    - FedRAMP
+    - CJIS
+  
+  security_clearance_levels:
+    - Public
+    - Sensitive
+    - Confidential
+    - Secret
+  
+  data_classification:
+    - Unclassified
+    - Controlled Unclassified Information
+    - Confidential
+    - Secret
+
+# Legacy system bias (government-specific)
+legacy_system_bias:
+  enabled: true
+  legacy_os_probability: 0.3   # 30% chance of legacy OS
+  legacy_software_probability: 0.4  # 40% chance of legacy software
+  end_of_life_tolerance: 0.15  # 15% tolerance for EOL systems
+
+# Patch management (conservative government approach)
+patch_management:
+  patch_delay_days:
+    critical: 30               # 30-day delay for critical patches
+    high: 60                   # 60-day delay for high patches
+    medium: 120                # 120-day delay for medium patches
+    low: 180                   # 180-day delay for low patches
+  
+  patch_compliance_rate: 0.75  # 75% patch compliance rate
+  emergency_patch_probability: 0.1  # 10% emergency patching
