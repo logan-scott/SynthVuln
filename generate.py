@@ -76,6 +76,30 @@ class SynthVulnGenerator:
         run_assets = choice in ['1', '3', '7']
         run_findings = choice in ['2', '3', '7']
         
+        # Configuration file selection
+        config_file = ''
+        if run_assets or run_findings:
+            print("\n" + "-" * 40)
+            print("Configuration File Selection")
+            print("-" * 40)
+            print("Pre-made configuration files:")
+            print("- generator_config.yaml (default)")
+            print("- scenario_small.yaml (small business)")
+            print("- scenario_enterprise.yaml (global enterprise)")
+            print("- scenario_government.yaml (government entity)")
+            
+            while True:
+                try:
+                    config_choice = input("Enter configuration file (default: configs/generator_config.yaml): ").strip()
+                    if not config_choice or config_choice == 'configs/generator_config.yaml':
+                        config_file = ''
+                        break
+                    else:
+                        config_file = config_choice
+                except KeyboardInterrupt:
+                    print("\nOperation cancelled.")
+                    return
+        
         # Asset generator configuration
         asset_count = 10
         asset_output = ""
@@ -216,14 +240,14 @@ class SynthVulnGenerator:
         asset_output_file = None
         if run_assets:
             print("\nRunning Asset Generator...")
-            asset_output_file = self._run_asset_generator(asset_count, asset_output, asset_format)
+            asset_output_file = self._run_asset_generator(asset_count, asset_output, asset_format, config_file)
             
         if run_findings:
             print("\nRunning Findings Generator...")
             # If we just generated assets and no specific input was provided, use the generated assets
             if run_assets and not findings_input and asset_output_file:
                 findings_input = asset_output_file
-            self._run_findings_generator(findings_count, findings_output, findings_format, findings_input, bias_recent)
+            self._run_findings_generator(findings_count, findings_output, findings_format, findings_input, bias_recent, config_file)
         
         print("\n" + "=" * 60)
         print("Generation Complete!")
@@ -259,13 +283,18 @@ class SynthVulnGenerator:
         
         asset_output_file = None
         
+        # Get config file from arguments
+        config_file = getattr(args, 'config', '')
+        
         # Run asset generator if requested
         if hasattr(args, 'count_assets') and args.count_assets:
             print("\nRunning Asset Generator...")
             asset_output_file = self._run_asset_generator(
                 count=args.count_assets,
                 output_file=getattr(args, 'output_assets', ''),
-                output_format=getattr(args, 'output_format', 'json')
+                output_format=getattr(args, 'output_format', 'json'),
+                config_file=config_file,
+                explicit_count=True
             )
         
         # Run findings generator if requested
@@ -281,21 +310,26 @@ class SynthVulnGenerator:
                 output_file=getattr(args, 'output_findings', ''),
                 output_format=getattr(args, 'output_format', 'json'),
                 input_file=input_file,
-                bias_recent=not getattr(args, 'no_bias_recent', False)
+                bias_recent=not getattr(args, 'no_bias_recent', False),
+                config_file=config_file
             )
         
         print("\n" + "=" * 60)
         print("Generation Complete!")
         print("=" * 60)
     
-    def _run_asset_generator(self, count: int = 10, output_file: str = '', output_format: str = 'json') -> Optional[str]:
+    def _run_asset_generator(self, count: int = 10, output_file: str = '', output_format: str = 'json', config_file: str = '', explicit_count: bool = False) -> Optional[str]:
         """Run the asset generator with specified parameters."""
         try:
             if not self.asset_generator:
-                self.asset_generator = AssetGenerator()
+                if config_file:
+                    self.asset_generator = AssetGenerator(config_file=config_file)
+                else:
+                    self.asset_generator = AssetGenerator()
             
-            # Use config defaults if not specified
-            if count == 10:
+            # Only use config defaults if no explicit count was provided via command line
+            # This preserves the ability to explicitly specify any number of assets
+            if not explicit_count:
                 count = self.asset_generator.default_asset_count
             
             if not output_file:
@@ -321,11 +355,14 @@ class SynthVulnGenerator:
             return None
     
     def _run_findings_generator(self, count: int = 10, output_file: str = '', output_format: str = 'json', 
-                               input_file: str = '', bias_recent: bool = True) -> Optional[str]:
+                               input_file: str = '', bias_recent: bool = True, config_file: str = '') -> Optional[str]:
         """Run the findings generator with specified parameters."""
         try:
             if not self.findings_generator:
-                self.findings_generator = FindingsGenerator()
+                if config_file:
+                    self.findings_generator = FindingsGenerator(config_file=config_file)
+                else:
+                    self.findings_generator = FindingsGenerator()
             
             # Initialize the generator
             self.findings_generator.initialize_for_generation(
@@ -411,6 +448,9 @@ Examples:
   python generate.py --run --count-findings 5000 --input-assets data/assets.json --output-findings data/findings.sql --output-format sql
   python generate.py --run --nvd-integration
   python generate.py --run --nvd-integration --count-assets 100 --count-findings 500
+  python generate.py --run --config scenario_small.yaml --count-assets 50
+  python generate.py --run --config scenario_enterprise.yaml --count-assets 5000 --count-findings 10000
+  python generate.py --run --config scenario_government.yaml --count-assets 500
 """
     )
     
@@ -440,6 +480,8 @@ Examples:
                        help='Run NVD integration to fetch vulnerability data')
     parser.add_argument('--nvd-collection-type', type=str, choices=['cves', 'cpes', 'both'], default='both',
                        help='Type of NVD data to collect: cves, cpes, or both (default: both)')
+    parser.add_argument('--config', type=str, metavar='FILE',
+                       help='Configuration file to use (default: generator_config.yaml). Pre-made options: scenario_small.yaml, scenario_enterprise.yaml, scenario_government.yaml')
     
     args = parser.parse_args()
     

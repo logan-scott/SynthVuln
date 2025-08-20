@@ -668,7 +668,7 @@ def create_comparative_view():
 def main():
     """Main dashboard function"""
     # Header
-    st.title("🛡️ Vulnerability Analysis Dashboard")
+    st.title("🛡️ SynthVuln Vulnerability Analysis Dashboard")
     st.markdown("---")
     
     # Analysis mode selection
