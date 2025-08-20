@@ -1,10 +1,11 @@
-# SynthVuln Generator
+# SynthVuln 
 
 A comprehensive synthetic vulnerability data generator that creates realistic asset inventories and vulnerability findings for testing and simulation purposes.
 
 ## Overview
 
-The SynthVuln Generator provides a unified interface for running asset and findings generators with three different modes:
+The SynthVuln tool provides a unified interface for running asset and findings generators with three different modes:
+
 
 1. **Interactive Mode** - User-friendly question-based interface
 2. **Default Mode** - Run both generators with default settings
@@ -14,7 +15,7 @@ The SynthVuln Generator provides a unified interface for running asset and findi
 
 ### Interactive Mode (Default)
 ```bash
-python generate.py
+python synthvuln.py
 ```
 Provides a user-friendly question-based interface where you can:
 - Choose which generators to run (assets only, findings only, or both)
@@ -24,7 +25,7 @@ Provides a user-friendly question-based interface where you can:
 
 ### Default Mode
 ```bash
-python generate.py --default
+python synthvuln.py --default
 ```
 Runs both generators with default settings:
 - Generates 10 assets in JSON format
@@ -33,7 +34,7 @@ Runs both generators with default settings:
 
 ### Run Mode
 ```bash
-python generate.py --run [options]
+python synthvuln.py --run [options]
 ```
 Command-line interface for programmatic usage with full control over all parameters.
 
@@ -51,25 +52,49 @@ Command-line interface for programmatic usage with full control over all paramet
 ### Basic Examples
 ```bash
 # Interactive mode
-python generate.py
+python synthvuln.py
 
 # Default mode
-python generate.py --default
+python synthvuln.py --default
 
 # Generate 1000 assets and 10000 findings in JSON format
-python generate.py --run --count-assets 1000 --count-findings 10000 --output-format json
+python synthvuln.py --run --count-assets 1000 --count-findings 10000 --output-format json
 ```
 
 ### Advanced Examples
 ```bash
 # Generate assets in CSV format
-python generate.py --run --count-assets 500 --output-assets data/assets.csv --output-format csv
+python synthvuln.py --run --count-assets 500 --output-assets data/assets.csv --output-format csv
 
 # Generate findings using existing assets
-python generate.py --run --count-findings 5000 --input-assets data/assets.json --output-findings data/findings.sql --output-format sql
+python synthvuln.py --run --count-findings 5000 --input-assets data/assets.json --output-findings data/findings.sql --output-format sql
 
 # Generate both with custom paths and SQL format
-python generate.py --run --count-assets 1000 --count-findings 10000 --output-assets /data/outputs/assets.json --output-findings /data/outputs/findings.sql --output-format sql
+python synthvuln.py --run --count-assets 1000 --count-findings 10000 --output-assets /data/outputs/assets.json --output-findings /data/outputs/findings.sql --output-format sql
+```
+
+### Evaluation Analysis Examples
+```bash
+# Run all evaluation analyses on default scenario data
+python synthvuln.py --eval-all
+
+# Run specific evaluation analysis
+python synthvuln.py --eval-script prioritization
+python synthvuln.py --eval-script statistics
+python synthvuln.py --eval-script entropy
+
+# Run evaluation analysis with custom files
+python synthvuln.py --eval-all --eval-assets data/outputs/scenario_enterprise_assets.json --eval-findings data/outputs/scenario_enterprise_findings.json
+python synthvuln.py --eval-script prioritization --eval-assets custom_assets.json --eval-findings custom_findings.json
+```
+
+### NVD Integration Examples
+```bash
+# Run NVD integration with data generation
+python synthvuln.py --run --nvd-integration --count-assets 100 --count-findings 500
+
+# NVD integration only (CVEs and CPEs)
+python synthvuln.py --run --nvd-integration
 ```
 
 ## Output Formats
@@ -105,10 +130,23 @@ python generate.py --run --count-assets 1000 --count-findings 10000 --output-ass
 - Links findings to generated or existing assets
 - Realistic vulnerability data based on NVD database
 
+### Evaluation Analysis
+- **Prioritization Analysis**: Risk-based vulnerability prioritization using CVSS scores and asset criticality
+- **Statistical Analysis**: Comprehensive statistics on vulnerability distributions and trends
+- **Entropy Analysis**: Information entropy calculations for vulnerability data assessment
+- **Custom Scenario File Support**: Run evaluations on custom asset and findings files
+- **Interactive Mode**: User-friendly interface for selecting evaluation types
+- **Batch Processing**: Run all evaluations or specific analyses programmatically
+
+### NVD Integration
+- Direct integration with National Vulnerability Database
+- CVE data collection and processing
+- CPE data collection and processing
+
 ### Smart Integration
-- Automatic format conversion when needed
-- Seamless chaining of asset and findings generation
-- Intelligent default path handling
+- Format conversion when needed
+- Chaining of asset and findings generation
+- Default path handling
 - Error handling and validation
 
 ## Configuration
@@ -130,16 +168,25 @@ The generators use configuration from `configs/generator_config.yaml` which incl
 
 ```
 SynthVuln/
-├── generate.py              # Main entry point
+├── synthvuln.py            # Main entry point
 ├── src/
 │   ├── asset_generator.py   # Asset generation logic
 │   └── findings_generator.py # Findings generation logic
 ├── configs/
 │   └── generator_config.yaml # Configuration file
+├── evaluations/
+│   ├── prioritization.py   # Vulnerability prioritization analysis
+│   ├── scenario_statistics.py # Statistical analysis
+│   ├── entropy.py          # Entropy analysis
+│   ├── ml_risk_prediction.ipynb # Machine learning risk prediction notebook
+│   └── dashboard.py        # Interactive Streamlit dashboard
+├── integrations/
+│   └── nvd.py              # NVD database integration
 ├── utils/
 │   └── util.py             # Utility functions
 └── data/
-    └── raw/                # Default output directory
+    ├── inputs/             # Input data directory (NVD data, etc.)
+    └── outputs/            # Output data directory (generated assets, findings, reports)
 ```
 
 ## Error Handling
@@ -158,5 +205,3 @@ Detailed logging is provided for:
 - Configuration loading
 - File operations
 - Error conditions and warnings
-
-Logs are written to separate files for each generator component.

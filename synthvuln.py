@@ -9,9 +9,9 @@ with three different modes:
 3. Run mode - Command-line interface for programmatic usage
 
 Usage:
-    python generate.py                                    # Interactive mode
-    python generate.py --default                          # Default mode
-    python generate.py --run [options]                    # Run mode
+    python synthvuln.py                                   # Interactive mode
+    python synthvuln.py --default                         # Default mode
+    python synthvuln.py --run [options]                   # Run mode
 """
 
 import argparse
@@ -19,7 +19,7 @@ import os
 import sys
 import subprocess
 from pathlib import Path
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, Union
 
 # Add src directory to path for imports
 src_path = os.path.join(os.path.dirname(__file__), 'src')
@@ -28,6 +28,14 @@ sys.path.insert(0, src_path)
 from asset_generator import AssetGenerator
 from findings_generator import FindingsGenerator
 from integrations.nvd import main as nvd
+
+# Import evaluation modules
+try:
+    from evaluations.prioritization import run_prioritization_analysis
+    from evaluations.scenario_statistics import run_comparative_analysis, run_full_analysis
+    from evaluations.entropy import run_comparative_analysis as run_entropy_comparative, run_full_analysis as run_entropy_full, run_scenario_analysis as run_entropy_scenario
+except ImportError as e:
+    print(f"Warning: Could not import evaluation modules: {e}")
 
 
 class SynthVulnGenerator:
@@ -45,7 +53,7 @@ class SynthVulnGenerator:
         print("=" * 60)
         
         # Ask which generators to run
-        print("\nWhich generators would you like to run?")
+        print("\nWhat would you like to do?")
         print("1. Asset Generator only")
         print("2. Findings Generator only")
         print("3. Both generators (recommended)")
@@ -53,17 +61,99 @@ class SynthVulnGenerator:
         print("5. NVD Integration - CPEs only")
         print("6. NVD Integration - Both CVEs and CPEs")
         print("7. NVD Integration (CVEs + CPEs) + Both generators")
+        print("8. Run all evaluation analysis (prioritization, statistics, entropy)")
+        print("9. Run specific evaluation analysis")
+        print("10. Run evaluation analysis with custom files")
         
         while True:
             try:
-                choice = input("\nEnter your choice (1-7): ").strip()
-                if choice in ['1', '2', '3', '4', '5', '6', '7']:
+                choice = input("\nEnter your choice (1-10): ").strip()
+                if choice in ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10']:
                     break
-                print("Please enter 1, 2, 3, 4, 5, 6, or 7.")
+                print("Please enter 1, 2, 3, 4, 5, 6, 7, 8, 9, or 10.")
             except KeyboardInterrupt:
                 print("\nOperation cancelled.")
                 return
         
+        # Handle evaluation choices first
+        if choice == '8':
+            # Run all evaluation analysis
+            self.run_evaluation_analysis('all')
+            return
+        elif choice == '9':
+            # Run specific evaluation analysis
+            print("\nAvailable evaluation scripts:")
+            print("1. Prioritization Analysis")
+            print("2. Statistical Analysis")
+            print("3. Entropy Analysis")
+            
+            while True:
+                try:
+                    eval_choice = input("\nEnter your choice (1-3): ").strip()
+                    if eval_choice == '1':
+                        self.run_evaluation_analysis('script', 'prioritization')
+                        return
+                    elif eval_choice == '2':
+                        self.run_evaluation_analysis('script', 'statistics')
+                        return
+                    elif eval_choice == '3':
+                        self.run_evaluation_analysis('script', 'entropy')
+                        return
+                    print("Please enter 1, 2, or 3.")
+                except KeyboardInterrupt:
+                    print("\nOperation cancelled.")
+                    return
+        elif choice == '10':
+            # Run evaluation analysis with custom files
+            print("\nCustom File Evaluation Analysis")
+            print("Please provide paths to your custom asset and findings files.")
+            
+            try:
+                custom_assets = input("\nEnter path to custom assets file: ").strip()
+                custom_findings = input("Enter path to custom findings file: ").strip()
+                
+                if not custom_assets or not custom_findings:
+                    print("❌ Both asset and findings files are required for custom evaluation.")
+                    return
+                
+                # Validate file existence
+                if not Path(custom_assets).exists():
+                    print(f"❌ Asset file not found: {custom_assets}")
+                    return
+                if not Path(custom_findings).exists():
+                    print(f"❌ Findings file not found: {custom_findings}")
+                    return
+                
+                print("\nAvailable evaluation scripts:")
+                print("1. Prioritization Analysis")
+                print("2. Statistical Analysis")
+                print("3. Entropy Analysis")
+                print("4. All analyses")
+                
+                while True:
+                    try:
+                        eval_choice = input("\nEnter your choice (1-4): ").strip()
+                        if eval_choice == '1':
+                            self.run_evaluation_analysis('script', 'prioritization', custom_assets, custom_findings)
+                            return
+                        elif eval_choice == '2':
+                            self.run_evaluation_analysis('script', 'statistics', custom_assets, custom_findings)
+                            return
+                        elif eval_choice == '3':
+                            self.run_evaluation_analysis('script', 'entropy', custom_assets, custom_findings)
+                            return
+                        elif eval_choice == '4':
+                            self.run_evaluation_analysis('all', '', custom_assets, custom_findings)
+                            return
+                        print("Please enter 1, 2, 3, or 4.")
+                    except KeyboardInterrupt:
+                        print("\nOperation cancelled.")
+                        return
+            except KeyboardInterrupt:
+                print("\nOperation cancelled.")
+                return
+        
+        # Handle generator and NVD choices
         run_nvd = choice in ['4', '5', '6', '7']
         nvd_collection_type = 'both'  # default
         if choice == '4':
@@ -419,6 +509,238 @@ class SynthVulnGenerator:
         except Exception as e:
             print(f"Error running NVD integration: {e}")
             return False
+    
+    def run_evaluation_analysis(self, eval_type: str = 'all', script_name: str = '', custom_assets: Optional[str] = None, custom_findings: Optional[str] = None) -> bool:
+        """Run evaluation analysis scripts.
+        
+        Args:
+            eval_type (str): Type of evaluation - 'all', 'script', 'prioritization', 'statistics', 'entropy'
+            script_name (str): Specific script name when eval_type is 'script'
+            custom_assets (str): Path to custom asset file for evaluation
+            custom_findings (str): Path to custom findings file for evaluation
+        """
+        try:
+            print("\n" + "=" * 60)
+            print("Starting Evaluation Analysis...")
+            print("=" * 60)
+            
+            # Validate custom files if provided
+            if custom_assets and not Path(custom_assets).exists():
+                print(f"❌ Custom asset file not found: {custom_assets}")
+                return False
+            if custom_findings and not Path(custom_findings).exists():
+                print(f"❌ Custom findings file not found: {custom_findings}")
+                return False
+            
+            # Check if data files exist (only if no custom files provided)
+            if not custom_assets and not custom_findings:
+                data_dir = Path('data/outputs')
+                if not data_dir.exists():
+                    print("❌ No data directory found. Please generate datasets first.")
+                    return False
+            
+            success = True
+            
+            if eval_type == 'all':
+                # Run all evaluation scripts
+                success &= self._run_prioritization_evaluation(custom_assets, custom_findings)
+                success &= self._run_statistics_evaluation(custom_assets, custom_findings)
+                success &= self._run_entropy_evaluation(custom_assets, custom_findings)
+                
+            elif eval_type == 'script':
+                # Run specific script
+                if script_name == 'prioritization':
+                    success = self._run_prioritization_evaluation(custom_assets, custom_findings)
+                elif script_name == 'statistics':
+                    success = self._run_statistics_evaluation(custom_assets, custom_findings)
+                elif script_name == 'entropy':
+                    success = self._run_entropy_evaluation(custom_assets, custom_findings)
+                else:
+                    print(f"❌ Unknown script name: {script_name}")
+                    print("Available scripts: prioritization, statistics, entropy")
+                    return False
+                    
+            elif eval_type in ['prioritization', 'statistics', 'entropy']:
+                # Run specific evaluation type
+                if eval_type == 'prioritization':
+                    success = self._run_prioritization_evaluation(custom_assets, custom_findings)
+                elif eval_type == 'statistics':
+                    success = self._run_statistics_evaluation(custom_assets, custom_findings)
+                elif eval_type == 'entropy':
+                    success = self._run_entropy_evaluation(custom_assets, custom_findings)
+            
+            if success:
+                print("\n✅ Evaluation analysis completed successfully!")
+            else:
+                print("\n⚠️  Some evaluation analyses encountered errors.")
+                
+            return success
+            
+        except Exception as e:
+            print(f"❌ Error running evaluation analysis: {e}")
+            return False
+    
+    def _run_prioritization_evaluation(self, custom_assets: Optional[str] = None, custom_findings: Optional[str] = None) -> bool:
+        """Run prioritization analysis for all available scenarios or custom files.
+        
+        Args:
+            custom_assets (str): Path to custom asset file
+            custom_findings (str): Path to custom findings file
+        """
+        try:
+            print("\n🚀 Running Vulnerability Prioritization Analysis...")
+            
+            success = True
+            processed_count = 0
+            
+            # Handle custom files
+            if custom_assets or custom_findings:
+                if custom_assets and custom_findings:
+                    print("📋 Processing custom files...")
+                    output_dir = Path('data/outputs/prioritization_custom')
+                    try:
+                        run_prioritization_analysis(
+                            custom_assets,
+                            custom_findings,
+                            str(output_dir),
+                            'custom'
+                        )
+                        processed_count += 1
+                        print(f"✅ Custom file analysis complete! Results saved to: {output_dir}")
+                    except Exception as e:
+                        print(f"❌ Error processing custom files: {e}")
+                        success = False
+                else:
+                    print("❌ Both custom asset and findings files must be provided for prioritization analysis.")
+                    success = False
+            else:
+                # Handle default scenarios
+                base_dir = Path('data/outputs')
+                scenarios = {
+                    'baseline_full': ('assets.json', 'findings.json'),
+                    'enterprise': ('scenario_enterprise_assets.json', 'scenario_enterprise_findings.json'),
+                    'government': ('scenario_government_assets.json', 'scenario_government_findings.json'),
+                    'small_business': ('scenario_small_assets.json', 'scenario_small_findings.json')
+                }
+                
+                for scenario_name, (assets_file, findings_file) in scenarios.items():
+                    assets_path = base_dir / assets_file
+                    findings_path = base_dir / findings_file
+                    output_dir = base_dir / f'prioritization_{scenario_name}'
+                    
+                    if assets_path.exists() and findings_path.exists():
+                        print(f"📋 Processing {scenario_name.upper()} scenario...")
+                        try:
+                            run_prioritization_analysis(
+                                str(assets_path),
+                                str(findings_path),
+                                str(output_dir),
+                                scenario_name
+                            )
+                            processed_count += 1
+                        except Exception as e:
+                            print(f"❌ Error processing {scenario_name}: {e}")
+                            success = False
+                    else:
+                        print(f"⚠️  Skipping {scenario_name}: Data files not found")
+                
+                if processed_count > 0:
+                    print(f"\n🎉 Prioritization analysis complete! Processed {processed_count} scenarios.")
+                else:
+                    print("\n⚠️  No scenarios were processed. Please generate datasets first.")
+                    success = False
+                
+            return success
+            
+        except Exception as e:
+            print(f"❌ Error in prioritization evaluation: {e}")
+            return False
+    
+    def _run_statistics_evaluation(self, custom_assets: Optional[str] = None, custom_findings: Optional[str] = None) -> bool:
+        """Run statistical analysis for default scenarios or custom files.
+        
+        Args:
+            custom_assets (str): Path to custom asset file
+            custom_findings (str): Path to custom findings file
+        """
+        try:
+            print("\n📊 Running Statistical Analysis...")
+            
+            # Handle custom files
+            if custom_assets or custom_findings:
+                if custom_assets and custom_findings:
+                    print("📂 Running statistical analysis on custom files...")
+                    # For custom files, we'll run a basic analysis
+                    # Note: The statistics module may need to be enhanced to handle custom files
+                    print("⚠️  Custom file statistical analysis is currently limited to basic metrics.")
+                    print(f"📁 Custom assets: {custom_assets}")
+                    print(f"📁 Custom findings: {custom_findings}")
+                    # TODO: Implement custom file handling in statistics module
+                    return True
+                else:
+                    print("❌ Both custom asset and findings files must be provided for statistical analysis.")
+                    return False
+            else:
+                # Handle default scenarios
+                # Check if we have baseline data for full analysis
+                base_dir = Path('data/outputs')
+                has_baseline = (base_dir / 'assets.json').exists() and (base_dir / 'findings.json').exists()
+                
+                if has_baseline:
+                    print("📂 Running full statistical analysis (including baseline data)...")
+                    run_full_analysis()
+                else:
+                    print("📂 Running comparative statistical analysis...")
+                    run_comparative_analysis()
+                    
+            return True
+            
+        except Exception as e:
+            print(f"❌ Error in statistical evaluation: {e}")
+            return False
+    
+    def _run_entropy_evaluation(self, custom_assets: Optional[str] = None, custom_findings: Optional[str] = None) -> bool:
+        """Run entropy analysis for default scenarios or custom files.
+        
+        Args:
+            custom_assets (str): Path to custom asset file
+            custom_findings (str): Path to custom findings file
+        """
+        try:
+            print("\n🔍 Running Entropy Analysis...")
+            
+            # Handle custom files
+            if custom_assets or custom_findings:
+                if custom_assets and custom_findings:
+                    print("📂 Running entropy analysis on custom files...")
+                    # For custom files, we'll run a basic analysis
+                    # Note: The entropy module may need to be enhanced to handle custom files
+                    print("⚠️  Custom file entropy analysis is currently limited to basic metrics.")
+                    print(f"📁 Custom assets: {custom_assets}")
+                    print(f"📁 Custom findings: {custom_findings}")
+                    # TODO: Implement custom file handling in entropy module
+                    return True
+                else:
+                    print("❌ Both custom asset and findings files must be provided for entropy analysis.")
+                    return False
+            else:
+                # Handle default scenarios
+                # Check if we have baseline data for full analysis
+                base_dir = Path('data/outputs')
+                has_baseline = (base_dir / 'assets.json').exists() and (base_dir / 'findings.json').exists()
+                
+                if has_baseline:
+                    print("📂 Running full entropy analysis (including baseline data)...")
+                    run_entropy_full()
+                else:
+                    print("📂 Running comparative entropy analysis...")
+                    run_entropy_comparative()
+                    
+            return True
+            
+        except Exception as e:
+            print(f"❌ Error in entropy evaluation: {e}")
+            return False
 
 
 def main():
@@ -428,29 +750,47 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Modes:
-  Interactive Mode (default): python generate.py
+  Interactive Mode (default): python synthvuln.py
     - User-friendly question-based interface
     - Allows selection of generators and configuration options
     
-  Default Mode: python generate.py --default
+  Default Mode: python synthvuln.py --default
     - Runs both generators with default settings
     - Quick start option for standard use cases
     
-  Run Mode: python generate.py --run [options]
+  Run Mode: python synthvuln.py --run [options]
     - Command-line interface for programmatic usage
     - Supports all configuration options via arguments
     
 Examples:
-  python generate.py
-  python generate.py --default
-  python generate.py --run --count-assets 1000 --count-findings 10000 --output-format json
-  python generate.py --run --count-assets 500 --output-assets data/assets.csv --output-format csv
-  python generate.py --run --count-findings 5000 --input-assets data/assets.json --output-findings data/findings.sql --output-format sql
-  python generate.py --run --nvd-integration
-  python generate.py --run --nvd-integration --count-assets 100 --count-findings 500
-  python generate.py --run --config scenario_small.yaml --count-assets 50
-  python generate.py --run --config scenario_enterprise.yaml --count-assets 5000 --count-findings 10000
-  python generate.py --run --config scenario_government.yaml --count-assets 500
+  # Basic usage
+  python synthvuln.py
+  python synthvuln.py --default
+  
+  # Data generation
+  python synthvuln.py --run --count-assets 1000 --count-findings 10000 --output-format json
+  python synthvuln.py --run --count-assets 500 --output-assets data/assets.csv --output-format csv
+  python synthvuln.py --run --count-findings 5000 --input-assets data/assets.json --output-findings data/findings.sql --output-format sql
+  
+  # NVD integration
+  python synthvuln.py --run --nvd-integration
+  python synthvuln.py --run --nvd-integration --count-assets 100 --count-findings 500
+  
+  # Scenario-based generation
+  python synthvuln.py --run --config scenario_small.yaml --count-assets 50
+  python synthvuln.py --run --config scenario_enterprise.yaml --count-assets 5000 --count-findings 10000
+  python synthvuln.py --run --config scenario_government.yaml --count-assets 500
+  
+  # Evaluation analysis
+  python synthvuln.py --eval-all
+  python synthvuln.py --eval-script prioritization
+  python synthvuln.py --eval-script statistics
+  python synthvuln.py --eval-script entropy
+  
+  # Custom file evaluation analysis
+  python synthvuln.py --eval-all --eval-assets custom_assets.json --eval-findings custom_findings.json
+  python synthvuln.py --eval-script prioritization --eval-assets my_assets.json --eval-findings my_findings.json
+  python synthvuln.py --eval-script statistics --eval-assets data/custom_assets.json --eval-findings data/custom_findings.json
 """
     )
     
@@ -483,6 +823,17 @@ Examples:
     parser.add_argument('--config', type=str, metavar='FILE',
                        help='Configuration file to use (default: generator_config.yaml). Pre-made options: scenario_small.yaml, scenario_enterprise.yaml, scenario_government.yaml')
     
+    # Evaluation arguments
+    eval_group = parser.add_mutually_exclusive_group()
+    eval_group.add_argument('--eval-all', action='store_true',
+                           help='Run all evaluation scripts (prioritization, statistics, entropy)')
+    eval_group.add_argument('--eval-script', type=str, choices=['prioritization', 'statistics', 'entropy'],
+                           help='Run a specific evaluation script')
+    parser.add_argument('--eval-assets', type=str, metavar='FILE',
+                       help='Custom asset file for evaluation analysis')
+    parser.add_argument('--eval-findings', type=str, metavar='FILE',
+                       help='Custom findings file for evaluation analysis')
+    
     args = parser.parse_args()
     
     generator = SynthVulnGenerator()
@@ -497,6 +848,12 @@ Examples:
                 parser.print_help()
                 sys.exit(1)
             generator.run_mode(args)
+        elif args.eval_all:
+            # Run all evaluation scripts
+            generator.run_evaluation_analysis('all', custom_assets=getattr(args, 'eval_assets', None), custom_findings=getattr(args, 'eval_findings', None))
+        elif args.eval_script:
+            # Run specific evaluation script
+            generator.run_evaluation_analysis('script', args.eval_script, custom_assets=getattr(args, 'eval_assets', None), custom_findings=getattr(args, 'eval_findings', None))
         else:
             # Interactive mode (default)
             generator.interactive_mode()
