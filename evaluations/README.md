@@ -236,9 +236,9 @@ jupyter notebook evaluations/ml_risk_prediction.ipynb
 
 ```bash
 # 1. Generate datasets (prerequisite)
-python generate.py --config configs/scenario_enterprise.yaml --count-assets 5000 --count-findings 20000
-python generate.py --config configs/scenario_government.yaml --count-assets 500 --count-findings 2000
-python generate.py --config configs/scenario_small.yaml --count-assets 50 --count-findings 150
+python synthvuln.py --config configs/scenario_enterprise.yaml --count-assets 5000 --count-findings 20000
+python synthvuln.py --config configs/scenario_government.yaml --count-assets 500 --count-findings 2000
+python synthvuln.py --config configs/scenario_small.yaml --count-assets 50 --count-findings 150
 
 # 2. Run statistical analysis
 python evaluations/scenario_statistics.py
