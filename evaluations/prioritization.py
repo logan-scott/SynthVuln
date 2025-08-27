@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Vulnerability Prioritization Analysis
+Sample Vulnerability Prioritization Analysis
 
 This script implements vulnerability prioritization based on CVSS scores and asset criticality.
 It follows the evaluation plan to rank vulnerabilities per asset and identify the top 10 riskiest assets.

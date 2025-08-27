@@ -208,17 +208,16 @@ streamlit run evaluations/dashboard.py
 - Risk categorization (Low, Medium, High, Critical)
 
 **Usage**:
-```bash
-jupyter notebook evaluations/ml_risk_prediction.ipynb
-```
+- Set SCENARIO and file paths in notebook
+- Run all cells in notebook
 
-**Inputs**:
+**Inputs (Set in notebook)**:
 - `data/outputs/scenario_{scenario}_assets.json` - Asset data with security attributes
 - `data/outputs/scenario_{scenario}_findings.json` - Vulnerability findings data
-- Scenario configuration files (enterprise, government, small)
+- Scenario configuration files (enterprise, government, small) or baseline configuration file
 
-**Outputs**:
-- `data/outputs/ml_risk_prediction_results.json` - Model performance, feature importance, top 10 riskiest assets
+**Outputs (Set in notebook)**:
+- `data/outputs/ml_risk_prediction_results_{scenario}.json` - Model performance, feature importance, top 10 riskiest assets
 - Feature correlation heatmap visualization
 - Risk score distribution plots
 - Model performance comparison plots (actual vs predicted)
