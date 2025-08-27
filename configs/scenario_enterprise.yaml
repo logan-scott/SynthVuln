@@ -754,8 +754,38 @@ cloud_service_providers:
 security_features:
   endpoint_security:
     default_probability: 0.9   # 90% coverage
+    applicable_asset_types:
+      - Desktop
+      - Laptop
+      - Workstation
+      - Server
+      - Webserver
+      - Storage server
+      - Virtualization server
+      - Virtual machine
+      - Database server
+      - Application server
+      - Mail server
   local_firewall:
     default_probability: 0.8   # 80% coverage
+    applicable_asset_types:
+      - Desktop
+      - Laptop
+      - Workstation
+      - Mobile device
+      - Server
+      - Webserver
+      - Storage server
+      - Virtualization server
+      - Virtual machine
+      - Database server
+      - Application server
+      - Mail server
+      - Proxy server
+      - DNS server
+      - DHCP server
+      - Identity server
+      - VPN server
 
 # Findings configuration (higher severity variance)
 findings_config:
