@@ -1,0 +1,11 @@
+matplotlib
+numpy
+pandas
+plotly
+PyYAML
+requests
+scikit-learn
+scipy
+seaborn
+streamlit
+tenacity
