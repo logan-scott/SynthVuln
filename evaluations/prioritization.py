@@ -308,7 +308,7 @@ if __name__ == '__main__':
     base_dir = Path(__file__).parent.parent / 'data' / 'outputs'
     
     scenarios = {
-        'baseline_full': ('assets.json', 'findings.json'),
+        'baseline': ('assets.json', 'findings.json'),
         'enterprise': ('scenario_enterprise_assets.json', 'scenario_enterprise_findings.json'),
         'government': ('scenario_government_assets.json', 'scenario_government_findings.json'),
         'small_business': ('scenario_small_assets.json', 'scenario_small_findings.json')

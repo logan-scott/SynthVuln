@@ -1,0 +1,202 @@
+[
+  {
+    "asset_uuid": "96f70a48-a992-40e9-8e46-70165dbd0dae",
+    "hostname": "data-center-container-6080",
+    "type": "Container",
+    "os_family": "Container",
+    "internet_exposed": true,
+    "lifecycle_stage": "Production",
+    "composite_risk_score": 25.5,
+    "criticality_score": 10.0,
+    "vulnerability_metrics": {
+      "total_score": 28.675,
+      "avg_cvss": 8.525,
+      "max_cvss": 9.8,
+      "vuln_count": 4,
+      "critical_count": 2,
+      "high_count": 1,
+      "medium_count": 1,
+      "low_count": 0
+    }
+  },
+  {
+    "asset_uuid": "26933b9b-69e6-4d5a-951e-3d91e5ff828a",
+    "hostname": "data-center-container-9211",
+    "type": "Container",
+    "os_family": "Linux",
+    "internet_exposed": true,
+    "lifecycle_stage": "Pilot",
+    "composite_risk_score": 25.5,
+    "criticality_score": 10.0,
+    "vulnerability_metrics": {
+      "total_score": 37.8,
+      "avg_cvss": 9.45,
+      "max_cvss": 9.8,
+      "vuln_count": 2,
+      "critical_count": 2,
+      "high_count": 0,
+      "medium_count": 0,
+      "low_count": 0
+    }
+  },
+  {
+    "asset_uuid": "d2e818e9-4fd7-42c3-b3ab-0bc3d1466f92",
+    "hostname": "cloud-webserver-5650",
+    "type": "Webserver",
+    "os_family": "Linux",
+    "internet_exposed": true,
+    "lifecycle_stage": "Pilot",
+    "composite_risk_score": 25.5,
+    "criticality_score": 10.0,
+    "vulnerability_metrics": {
+      "total_score": 23.4,
+      "avg_cvss": 7.8,
+      "max_cvss": 7.8,
+      "vuln_count": 1,
+      "critical_count": 0,
+      "high_count": 1,
+      "medium_count": 0,
+      "low_count": 0
+    }
+  },
+  {
+    "asset_uuid": "91f0a994-b17b-4823-8471-48920444b354",
+    "hostname": "cloud-database-server-5436",
+    "type": "Database server",
+    "os_family": "Linux",
+    "internet_exposed": true,
+    "lifecycle_stage": "Production",
+    "composite_risk_score": 25.5,
+    "criticality_score": 10.0,
+    "vulnerability_metrics": {
+      "total_score": 21.400000000000002,
+      "avg_cvss": 7.2,
+      "max_cvss": 9.8,
+      "vuln_count": 4,
+      "critical_count": 1,
+      "high_count": 1,
+      "medium_count": 2,
+      "low_count": 0
+    }
+  },
+  {
+    "asset_uuid": "fe0821f1-7d11-4e97-ace3-b69356ba7b45",
+    "hostname": "data-center-container-6683",
+    "type": "Container",
+    "os_family": "Container",
+    "internet_exposed": true,
+    "lifecycle_stage": "Production",
+    "composite_risk_score": 25.5,
+    "criticality_score": 10.0,
+    "vulnerability_metrics": {
+      "total_score": 39.2,
+      "avg_cvss": 9.8,
+      "max_cvss": 9.8,
+      "vuln_count": 1,
+      "critical_count": 1,
+      "high_count": 0,
+      "medium_count": 0,
+      "low_count": 0
+    }
+  },
+  {
+    "asset_uuid": "c0943d6d-26fa-4c31-9774-0d5ca4752f34",
+    "hostname": "data-center-container-6278",
+    "type": "Container",
+    "os_family": "Container",
+    "internet_exposed": true,
+    "lifecycle_stage": "Production",
+    "composite_risk_score": 25.5,
+    "criticality_score": 10.0,
+    "vulnerability_metrics": {
+      "total_score": 23.4,
+      "avg_cvss": 7.8,
+      "max_cvss": 7.8,
+      "vuln_count": 1,
+      "critical_count": 0,
+      "high_count": 1,
+      "medium_count": 0,
+      "low_count": 0
+    }
+  },
+  {
+    "asset_uuid": "eb9e17c2-5c2d-4725-913d-f6b39089bcc9",
+    "hostname": "cloud-container-6610",
+    "type": "Container",
+    "os_family": "Container",
+    "internet_exposed": true,
+    "lifecycle_stage": "Pilot",
+    "composite_risk_score": 25.5,
+    "criticality_score": 10.0,
+    "vulnerability_metrics": {
+      "total_score": 26.400000000000002,
+      "avg_cvss": 8.8,
+      "max_cvss": 8.8,
+      "vuln_count": 1,
+      "critical_count": 0,
+      "high_count": 1,
+      "medium_count": 0,
+      "low_count": 0
+    }
+  },
+  {
+    "asset_uuid": "98b30edd-bad6-475e-a3cf-c922e0d3d1da",
+    "hostname": "data-center-container-9520",
+    "type": "Container",
+    "os_family": "Linux",
+    "internet_exposed": true,
+    "lifecycle_stage": "Production",
+    "composite_risk_score": 25.5,
+    "criticality_score": 10.0,
+    "vulnerability_metrics": {
+      "total_score": 39.2,
+      "avg_cvss": 9.8,
+      "max_cvss": 9.8,
+      "vuln_count": 2,
+      "critical_count": 2,
+      "high_count": 0,
+      "medium_count": 0,
+      "low_count": 0
+    }
+  },
+  {
+    "asset_uuid": "815e0283-5670-4cba-b657-fea504e887ff",
+    "hostname": "cloud-webserver-7767",
+    "type": "Webserver",
+    "os_family": "Linux",
+    "internet_exposed": true,
+    "lifecycle_stage": "Production",
+    "composite_risk_score": 25.5,
+    "criticality_score": 10.0,
+    "vulnerability_metrics": {
+      "total_score": 23.4,
+      "avg_cvss": 7.8,
+      "max_cvss": 7.8,
+      "vuln_count": 1,
+      "critical_count": 0,
+      "high_count": 1,
+      "medium_count": 0,
+      "low_count": 0
+    }
+  },
+  {
+    "asset_uuid": "ad710850-93b6-4e9c-8764-e30ae924567f",
+    "hostname": "data-center-container-1542",
+    "type": "Container",
+    "os_family": "Container",
+    "internet_exposed": true,
+    "lifecycle_stage": "Production",
+    "composite_risk_score": 25.5,
+    "criticality_score": 10.0,
+    "vulnerability_metrics": {
+      "total_score": 20.318181818181817,
+      "avg_cvss": 6.990909090909091,
+      "max_cvss": 10.0,
+      "vuln_count": 11,
+      "critical_count": 1,
+      "high_count": 6,
+      "medium_count": 3,
+      "low_count": 0
+    }
+  }
+]

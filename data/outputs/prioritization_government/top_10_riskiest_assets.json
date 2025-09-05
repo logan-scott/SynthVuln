@@ -1,0 +1,202 @@
+[
+  {
+    "asset_uuid": "58e39b88-082c-4b6c-afb4-563b02a372f2",
+    "hostname": "data-center-database-server-6424",
+    "type": "Database server",
+    "os_family": "Linux",
+    "internet_exposed": true,
+    "lifecycle_stage": "Production",
+    "composite_risk_score": 25.5,
+    "criticality_score": 10.0,
+    "vulnerability_metrics": {
+      "total_score": 21.46666666666667,
+      "avg_cvss": 6.933333333333334,
+      "max_cvss": 9.8,
+      "vuln_count": 6,
+      "critical_count": 2,
+      "high_count": 1,
+      "medium_count": 3,
+      "low_count": 0
+    }
+  },
+  {
+    "asset_uuid": "db6ccff7-8d56-4829-98c3-f234fd32777b",
+    "hostname": "data-center-database-server-7721",
+    "type": "Database server",
+    "os_family": "Windows",
+    "internet_exposed": true,
+    "lifecycle_stage": "Production",
+    "composite_risk_score": 25.5,
+    "criticality_score": 10.0,
+    "vulnerability_metrics": {
+      "total_score": 23.900000000000002,
+      "avg_cvss": 7.966666666666667,
+      "max_cvss": 8.8,
+      "vuln_count": 3,
+      "critical_count": 0,
+      "high_count": 3,
+      "medium_count": 0,
+      "low_count": 0
+    }
+  },
+  {
+    "asset_uuid": "40ba9c07-5b45-415a-9f7f-a5aeeebe6d5f",
+    "hostname": "data-center-webserver-1544",
+    "type": "Webserver",
+    "os_family": "Linux",
+    "internet_exposed": true,
+    "lifecycle_stage": "Production",
+    "composite_risk_score": 25.5,
+    "criticality_score": 10.0,
+    "vulnerability_metrics": {
+      "total_score": 21.208333333333332,
+      "avg_cvss": 7.125,
+      "max_cvss": 9.8,
+      "vuln_count": 12,
+      "critical_count": 3,
+      "high_count": 3,
+      "medium_count": 6,
+      "low_count": 0
+    }
+  },
+  {
+    "asset_uuid": "daaaf768-f27f-4b1d-b128-1a772c183933",
+    "hostname": "classified-database-server-3634",
+    "type": "Database server",
+    "os_family": "Windows",
+    "internet_exposed": true,
+    "lifecycle_stage": "Production",
+    "composite_risk_score": 25.5,
+    "criticality_score": 10.0,
+    "vulnerability_metrics": {
+      "total_score": 22.080000000000002,
+      "avg_cvss": 7.12,
+      "max_cvss": 9.8,
+      "vuln_count": 5,
+      "critical_count": 2,
+      "high_count": 0,
+      "medium_count": 3,
+      "low_count": 0
+    }
+  },
+  {
+    "asset_uuid": "4a04e2c0-94c8-4fc8-b173-03c17ae81a12",
+    "hostname": "classified-database-server-2477",
+    "type": "Database server",
+    "os_family": "Linux",
+    "internet_exposed": true,
+    "lifecycle_stage": "Maintenance",
+    "composite_risk_score": 25.5,
+    "criticality_score": 10.0,
+    "vulnerability_metrics": {
+      "total_score": 26.05,
+      "avg_cvss": 8.4,
+      "max_cvss": 9.9,
+      "vuln_count": 4,
+      "critical_count": 1,
+      "high_count": 2,
+      "medium_count": 1,
+      "low_count": 0
+    }
+  },
+  {
+    "asset_uuid": "1c5fb09b-bfe3-4624-b74f-642237829e16",
+    "hostname": "data-center-server-2710",
+    "type": "Server",
+    "os_family": "Windows",
+    "internet_exposed": true,
+    "lifecycle_stage": "Production",
+    "composite_risk_score": 25.41,
+    "criticality_score": 9.9,
+    "vulnerability_metrics": {
+      "total_score": 20.675,
+      "avg_cvss": 6.075,
+      "max_cvss": 9.8,
+      "vuln_count": 4,
+      "critical_count": 1,
+      "high_count": 2,
+      "medium_count": 0,
+      "low_count": 0
+    }
+  },
+  {
+    "asset_uuid": "a125f646-76d7-45bd-ba7a-8371711bfc1a",
+    "hostname": "data-center-server-9854",
+    "type": "Server",
+    "os_family": "Windows",
+    "internet_exposed": true,
+    "lifecycle_stage": "Production",
+    "composite_risk_score": 25.41,
+    "criticality_score": 9.9,
+    "vulnerability_metrics": {
+      "total_score": 22.880000000000003,
+      "avg_cvss": 7.5200000000000005,
+      "max_cvss": 9.8,
+      "vuln_count": 5,
+      "critical_count": 2,
+      "high_count": 0,
+      "medium_count": 3,
+      "low_count": 0
+    }
+  },
+  {
+    "asset_uuid": "19e70743-422d-4402-b016-3f6dc3b0fe97",
+    "hostname": "classified-server-3051",
+    "type": "Server",
+    "os_family": "Windows",
+    "internet_exposed": true,
+    "lifecycle_stage": "Production",
+    "composite_risk_score": 25.41,
+    "criticality_score": 9.9,
+    "vulnerability_metrics": {
+      "total_score": 25.400000000000002,
+      "avg_cvss": 8.466666666666667,
+      "max_cvss": 8.8,
+      "vuln_count": 3,
+      "critical_count": 0,
+      "high_count": 3,
+      "medium_count": 0,
+      "low_count": 0
+    }
+  },
+  {
+    "asset_uuid": "0f584e0d-eacb-4c4c-b31d-6a86782ef445",
+    "hostname": "classified-server-3153",
+    "type": "Server",
+    "os_family": "Linux",
+    "internet_exposed": true,
+    "lifecycle_stage": "Production",
+    "composite_risk_score": 25.41,
+    "criticality_score": 9.9,
+    "vulnerability_metrics": {
+      "total_score": 24.9,
+      "avg_cvss": 8.3,
+      "max_cvss": 8.8,
+      "vuln_count": 2,
+      "critical_count": 0,
+      "high_count": 2,
+      "medium_count": 0,
+      "low_count": 0
+    }
+  },
+  {
+    "asset_uuid": "ecdec894-fd33-48e2-b119-fee67487236c",
+    "hostname": "classified-server-2860",
+    "type": "Server",
+    "os_family": "Windows",
+    "internet_exposed": true,
+    "lifecycle_stage": "Production",
+    "composite_risk_score": 25.41,
+    "criticality_score": 9.9,
+    "vulnerability_metrics": {
+      "total_score": 22.5,
+      "avg_cvss": 7.5,
+      "max_cvss": 7.5,
+      "vuln_count": 2,
+      "critical_count": 0,
+      "high_count": 2,
+      "medium_count": 0,
+      "low_count": 0
+    }
+  }
+]

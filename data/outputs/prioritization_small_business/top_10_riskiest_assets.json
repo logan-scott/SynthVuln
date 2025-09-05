@@ -1,0 +1,202 @@
+[
+  {
+    "asset_uuid": "e3843987-8f44-4c98-80cc-1f9d7cecdba2",
+    "hostname": "internal-webserver-4225",
+    "type": "Webserver",
+    "os_family": "Linux",
+    "internet_exposed": false,
+    "lifecycle_stage": "Production",
+    "composite_risk_score": 22.8,
+    "criticality_score": 10.0,
+    "vulnerability_metrics": {
+      "total_score": 23.833333333333332,
+      "avg_cvss": 7.633333333333334,
+      "max_cvss": 9.3,
+      "vuln_count": 3,
+      "critical_count": 1,
+      "high_count": 1,
+      "medium_count": 1,
+      "low_count": 0
+    }
+  },
+  {
+    "asset_uuid": "189c1f20-2b7a-406c-9d12-c63d226d1fef",
+    "hostname": "remote-laptop-6050",
+    "type": "Laptop",
+    "os_family": "Windows",
+    "internet_exposed": true,
+    "lifecycle_stage": "Production",
+    "composite_risk_score": 21.945,
+    "criticality_score": 6.050000000000001,
+    "vulnerability_metrics": {
+      "total_score": 21.1,
+      "avg_cvss": 7.575,
+      "max_cvss": 8.8,
+      "vuln_count": 4,
+      "critical_count": 0,
+      "high_count": 3,
+      "medium_count": 1,
+      "low_count": 0
+    }
+  },
+  {
+    "asset_uuid": "5dd04ab4-43c6-426b-969d-c2ce8d34b470",
+    "hostname": "internal-server-1854",
+    "type": "Server",
+    "os_family": "Linux",
+    "internet_exposed": false,
+    "lifecycle_stage": "Production",
+    "composite_risk_score": 21.900000000000002,
+    "criticality_score": 9.0,
+    "vulnerability_metrics": {
+      "total_score": 20.8,
+      "avg_cvss": 7.683333333333334,
+      "max_cvss": 8.8,
+      "vuln_count": 6,
+      "critical_count": 0,
+      "high_count": 4,
+      "medium_count": 2,
+      "low_count": 0
+    }
+  },
+  {
+    "asset_uuid": "07a036aa-554d-4fae-a3aa-89c6fb9a004b",
+    "hostname": "remote-mobile-device-5535",
+    "type": "Mobile device",
+    "os_family": "Mobile",
+    "internet_exposed": true,
+    "lifecycle_stage": "Production",
+    "composite_risk_score": 21.45,
+    "criticality_score": 5.5,
+    "vulnerability_metrics": {
+      "total_score": 25.560000000000002,
+      "avg_cvss": 8.18,
+      "max_cvss": 9.8,
+      "vuln_count": 5,
+      "critical_count": 1,
+      "high_count": 3,
+      "medium_count": 1,
+      "low_count": 0
+    }
+  },
+  {
+    "asset_uuid": "72af5be9-6089-47c9-a715-530bf5545b15",
+    "hostname": "internal-server-2712",
+    "type": "Server",
+    "os_family": "Windows",
+    "internet_exposed": false,
+    "lifecycle_stage": "Production",
+    "composite_risk_score": 20.952,
+    "criticality_score": 9.0,
+    "vulnerability_metrics": {
+      "total_score": 18.42,
+      "avg_cvss": 6.86,
+      "max_cvss": 8.8,
+      "vuln_count": 5,
+      "critical_count": 0,
+      "high_count": 3,
+      "medium_count": 2,
+      "low_count": 0
+    }
+  },
+  {
+    "asset_uuid": "51ee68f9-3715-414d-90fc-77be123d9651",
+    "hostname": "cloud-server-5347",
+    "type": "Server",
+    "os_family": "Linux",
+    "internet_exposed": false,
+    "lifecycle_stage": "Production",
+    "composite_risk_score": 20.412000000000003,
+    "criticality_score": 9.0,
+    "vulnerability_metrics": {
+      "total_score": 17.520000000000003,
+      "avg_cvss": 6.34,
+      "max_cvss": 9.8,
+      "vuln_count": 5,
+      "critical_count": 1,
+      "high_count": 1,
+      "medium_count": 2,
+      "low_count": 1
+    }
+  },
+  {
+    "asset_uuid": "f6a54557-f7a6-4a6c-8424-df82ac20d418",
+    "hostname": "data-center-server-5491",
+    "type": "Server",
+    "os_family": "Linux",
+    "internet_exposed": false,
+    "lifecycle_stage": "Production",
+    "composite_risk_score": 20.04666666666667,
+    "criticality_score": 9.0,
+    "vulnerability_metrics": {
+      "total_score": 16.91111111111111,
+      "avg_cvss": 5.722222222222222,
+      "max_cvss": 9.8,
+      "vuln_count": 9,
+      "critical_count": 1,
+      "high_count": 4,
+      "medium_count": 2,
+      "low_count": 0
+    }
+  },
+  {
+    "asset_uuid": "2745d995-722f-4c65-8639-5bc5d6442cd9",
+    "hostname": "remote-desktop-4843",
+    "type": "Desktop",
+    "os_family": "Windows",
+    "internet_exposed": true,
+    "lifecycle_stage": "Production",
+    "composite_risk_score": 19.9,
+    "criticality_score": 6.6000000000000005,
+    "vulnerability_metrics": {
+      "total_score": 15.766666666666666,
+      "avg_cvss": 6.5,
+      "max_cvss": 8.8,
+      "vuln_count": 6,
+      "critical_count": 0,
+      "high_count": 2,
+      "medium_count": 4,
+      "low_count": 0
+    }
+  },
+  {
+    "asset_uuid": "a7c751f0-3db3-43c2-a8a1-5b6b5ebc83b4",
+    "hostname": "remote-desktop-9465",
+    "type": "Desktop",
+    "os_family": "Windows",
+    "internet_exposed": false,
+    "lifecycle_stage": "Production",
+    "composite_risk_score": 19.2,
+    "criticality_score": 6.0,
+    "vulnerability_metrics": {
+      "total_score": 22.34,
+      "avg_cvss": 7.88,
+      "max_cvss": 8.8,
+      "vuln_count": 5,
+      "critical_count": 0,
+      "high_count": 4,
+      "medium_count": 1,
+      "low_count": 0
+    }
+  },
+  {
+    "asset_uuid": "94513c0c-7b2e-4303-b967-1877ef65d8f4",
+    "hostname": "internal-desktop-2891",
+    "type": "Desktop",
+    "os_family": "Windows",
+    "internet_exposed": false,
+    "lifecycle_stage": "Production",
+    "composite_risk_score": 19.2,
+    "criticality_score": 6.0,
+    "vulnerability_metrics": {
+      "total_score": 23.4,
+      "avg_cvss": 7.8,
+      "max_cvss": 7.8,
+      "vuln_count": 1,
+      "critical_count": 0,
+      "high_count": 1,
+      "medium_count": 0,
+      "low_count": 0
+    }
+  }
+]
