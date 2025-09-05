@@ -1,0 +1,233 @@
+{
+  "enterprise_assets": {
+    "scenario": "enterprise_assets",
+    "total_records": 1000,
+    "columns": {
+      "location": {
+        "shannon_entropy": 1.9523,
+        "normalized_entropy": 0.9761,
+        "unique_values": 4,
+        "total_values": 1000,
+        "most_common": {
+          "Internal": 354,
+          "Remote": 254,
+          "Data center": 212
+        }
+      },
+      "lifecycle_stage": {
+        "shannon_entropy": 1.9461,
+        "normalized_entropy": 0.6487,
+        "unique_values": 8,
+        "total_values": 1000,
+        "most_common": {
+          "Production": 598,
+          "Development": 157,
+          "Staging": 75
+        }
+      },
+      "internet_exposed": {
+        "shannon_entropy": 0.8966,
+        "normalized_entropy": 0.8966,
+        "unique_values": 2,
+        "total_values": 1000,
+        "most_common": {
+          "False": 687,
+          "True": 313
+        }
+      }
+    }
+  },
+  "enterprise_findings": {
+    "scenario": "enterprise_findings",
+    "total_records": 20000,
+    "columns": {
+      "detection_tool": {
+        "shannon_entropy": 2.3219,
+        "normalized_entropy": 1.0,
+        "unique_values": 5,
+        "total_values": 20000,
+        "most_common": {
+          "Nessus": 4052,
+          "Qualys": 4011,
+          "OpenVAS": 3994
+        }
+      },
+      "severity": {
+        "shannon_entropy": 1.7545,
+        "normalized_entropy": 0.7556,
+        "unique_values": 5,
+        "total_values": 20000,
+        "most_common": {
+          "MEDIUM": 9096,
+          "HIGH": 7285,
+          "CRITICAL": 1992
+        }
+      },
+      "cve_id": {
+        "shannon_entropy": 11.9418,
+        "normalized_entropy": 0.9818,
+        "unique_values": 4586,
+        "total_values": 20000,
+        "most_common": {
+          "CVE-2024-57011": 16,
+          "CVE-2025-32842": 15,
+          "CVE-2024-27403": 15
+        }
+      }
+    }
+  },
+  "government_assets": {
+    "scenario": "government_assets",
+    "total_records": 500,
+    "columns": {
+      "location": {
+        "shannon_entropy": 1.7776,
+        "normalized_entropy": 0.8888,
+        "unique_values": 4,
+        "total_values": 500,
+        "most_common": {
+          "Internal": 189,
+          "Data center": 180,
+          "Remote": 99
+        }
+      },
+      "lifecycle_stage": {
+        "shannon_entropy": 1.4173,
+        "normalized_entropy": 0.5049,
+        "unique_values": 7,
+        "total_values": 500,
+        "most_common": {
+          "Production": 373,
+          "Testing": 40,
+          "Development": 30
+        }
+      },
+      "internet_exposed": {
+        "shannon_entropy": 0.8499,
+        "normalized_entropy": 0.8499,
+        "unique_values": 2,
+        "total_values": 500,
+        "most_common": {
+          "False": 362,
+          "True": 138
+        }
+      }
+    }
+  },
+  "government_findings": {
+    "scenario": "government_findings",
+    "total_records": 2000,
+    "columns": {
+      "detection_tool": {
+        "shannon_entropy": 2.8047,
+        "normalized_entropy": 0.999,
+        "unique_values": 7,
+        "total_values": 2000,
+        "most_common": {
+          "Acunetix": 320,
+          "Nexpose": 302,
+          "OpenVAS": 284
+        }
+      },
+      "severity": {
+        "shannon_entropy": 1.838,
+        "normalized_entropy": 0.7916,
+        "unique_values": 5,
+        "total_values": 2000,
+        "most_common": {
+          "MEDIUM": 887,
+          "HIGH": 700,
+          "CRITICAL": 188
+        }
+      },
+      "cve_id": {
+        "shannon_entropy": 10.5097,
+        "normalized_entropy": 0.9901,
+        "unique_values": 1568,
+        "total_values": 2000,
+        "most_common": {
+          "CVE-2025-23016": 5,
+          "CVE-2025-49440": 4,
+          "CVE-2025-6817": 4
+        }
+      }
+    }
+  },
+  "small_assets": {
+    "scenario": "small_assets",
+    "total_records": 50,
+    "columns": {
+      "location": {
+        "shannon_entropy": 1.7471,
+        "normalized_entropy": 0.8736,
+        "unique_values": 4,
+        "total_values": 50,
+        "most_common": {
+          "Internal": 23,
+          "Remote": 12,
+          "Data center": 12
+        }
+      },
+      "lifecycle_stage": {
+        "shannon_entropy": 1.0756,
+        "normalized_entropy": 0.4161,
+        "unique_values": 6,
+        "total_values": 50,
+        "most_common": {
+          "Production": 41,
+          "Decommissioned": 3,
+          "Staging": 2
+        }
+      },
+      "internet_exposed": {
+        "shannon_entropy": 0.469,
+        "normalized_entropy": 0.469,
+        "unique_values": 2,
+        "total_values": 50,
+        "most_common": {
+          "False": 45,
+          "True": 5
+        }
+      }
+    }
+  },
+  "small_findings": {
+    "scenario": "small_findings",
+    "total_records": 150,
+    "columns": {
+      "detection_tool": {
+        "shannon_entropy": 2.7918,
+        "normalized_entropy": 0.9945,
+        "unique_values": 7,
+        "total_values": 150,
+        "most_common": {
+          "Acunetix": 26,
+          "Nexpose": 24,
+          "Tenable.io": 23
+        }
+      },
+      "severity": {
+        "shannon_entropy": 1.5415,
+        "normalized_entropy": 0.6639,
+        "unique_values": 5,
+        "total_values": 150,
+        "most_common": {
+          "HIGH": 84,
+          "MEDIUM": 46,
+          "CRITICAL": 11
+        }
+      },
+      "cve_id": {
+        "shannon_entropy": 5.4649,
+        "normalized_entropy": 0.8377,
+        "unique_values": 92,
+        "total_values": 150,
+        "most_common": {
+          "CVE-2022-23205": 27,
+          "CVE-2021-40163": 26,
+          "CVE-2010-5109": 2
+        }
+      }
+    }
+  }
+}

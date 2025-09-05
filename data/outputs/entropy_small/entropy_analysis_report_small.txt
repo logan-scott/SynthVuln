@@ -1,0 +1,131 @@
+================================================================================
+SHANNON ENTROPY ANALYSIS REPORT
+================================================================================
+
+Generated on: 2025-08-28 23:17:13
+
+OVERVIEW:
+----------------------------------------
+Shannon entropy measures the diversity and randomness of categorical data.
+Higher entropy indicates more diverse/random distributions.
+Normalized entropy ranges from 0 (no diversity) to 1 (maximum diversity).
+
+SCENARIO SUMMARY:
+----------------------------------------
+SMALL_ASSETS Scenario:
+  Total Records: 50
+  Average Normalized Entropy: 0.6284 ± 0.0930
+  Diversity Level: High Diversity
+
+SMALL_FINDINGS Scenario:
+  Total Records: 200
+  Average Normalized Entropy: 0.9131 ± 0.1258
+  Diversity Level: Very High Diversity
+
+DETAILED ANALYSIS BY COLUMN:
+================================================================================
+SMALL_ASSETS SCENARIO:
+----------------------------------------
+Column: type
+  Shannon Entropy: 2.0648 bits
+  Normalized Entropy: 0.7355
+  Unique Values: 7
+  Total Values: 50
+  Diversity Level: High Diversity
+  Most Common Values:
+    Desktop: 19 (38.0%)
+    Laptop: 17 (34.0%)
+    Server: 8 (16.0%)
+
+Column: os_family
+  Shannon Entropy: 1.4641 bits
+  Normalized Entropy: 0.6305
+  Unique Values: 5
+  Total Values: 50
+  Diversity Level: High Diversity
+  Most Common Values:
+    Windows: 34 (68.0%)
+    Linux: 7 (14.0%)
+    macOS: 5 (10.0%)
+
+Column: location
+  Shannon Entropy: 1.3871 bits
+  Normalized Entropy: 0.6935
+  Unique Values: 4
+  Total Values: 50
+  Diversity Level: High Diversity
+  Most Common Values:
+    Remote: 23 (46.0%)
+    Internal: 23 (46.0%)
+    Data center: 3 (6.0%)
+
+Column: lifecycle_stage
+  Shannon Entropy: 1.2881 bits
+  Normalized Entropy: 0.4983
+  Unique Values: 6
+  Total Values: 50
+  Diversity Level: Moderate Diversity
+  Most Common Values:
+    Production: 38 (76.0%)
+    Development: 5 (10.0%)
+    Maintenance: 3 (6.0%)
+
+Column: internet_exposed
+  Shannon Entropy: 0.5842 bits
+  Normalized Entropy: 0.5842
+  Unique Values: 2
+  Total Values: 50
+  Diversity Level: Moderate Diversity
+  Most Common Values:
+    False: 43 (86.0%)
+    True: 7 (14.0%)
+
+
+SMALL_FINDINGS SCENARIO:
+----------------------------------------
+Column: detection_tool
+  Shannon Entropy: 1.5504 bits
+  Normalized Entropy: 0.9782
+  Unique Values: 3
+  Total Values: 200
+  Diversity Level: Very High Diversity
+  Most Common Values:
+    Nessus: 83 (41.5%)
+    Qualys: 69 (34.5%)
+    OpenVAS: 48 (24.0%)
+
+Column: severity
+  Shannon Entropy: 1.7834 bits
+  Normalized Entropy: 0.7681
+  Unique Values: 5
+  Total Values: 200
+  Diversity Level: High Diversity
+  Most Common Values:
+    MEDIUM: 86 (43.0%)
+    HIGH: 78 (39.0%)
+    UNKNOWN: 13 (6.5%)
+
+Column: cve_id
+  Shannon Entropy: 7.4463 bits
+  Normalized Entropy: 0.9929
+  Unique Values: 181
+  Total Values: 200
+  Diversity Level: Very High Diversity
+  Most Common Values:
+    CVE-2025-31134: 3 (1.5%)
+    CVE-2024-20694: 3 (1.5%)
+    CVE-2024-8590: 2 (1.0%)
+
+
+RECOMMENDATIONS:
+================================================================================
+• Inconsistent Diversity: Significant differences in data diversity between scenarios. Consider reviewing data generation parameters for consistency.
+
+• High entropy values (>0.8) indicate good data diversity and realistic distributions.
+• Low entropy values (<0.3) may indicate over-concentration in certain categories.
+• Consider balancing data generation to achieve moderate to high entropy across all scenarios.
+• Monitor entropy over time to ensure data quality remains consistent.
+
+================================================================================
+End of Report
+================================================================================

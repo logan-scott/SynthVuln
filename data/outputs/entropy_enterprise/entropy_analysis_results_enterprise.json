@@ -1,0 +1,101 @@
+{
+  "enterprise_assets": {
+    "scenario": "enterprise_assets",
+    "total_records": 5000,
+    "columns": {
+      "type": {
+        "shannon_entropy": 3.508,
+        "normalized_entropy": 0.7651,
+        "unique_values": 24,
+        "total_values": 5000,
+        "most_common": {
+          "Desktop": 1257,
+          "Laptop": 954,
+          "Virtual machine": 601
+        }
+      },
+      "os_family": {
+        "shannon_entropy": 2.0771,
+        "normalized_entropy": 0.6924,
+        "unique_values": 8,
+        "total_values": 5000,
+        "most_common": {
+          "Windows": 2137,
+          "Linux": 1549,
+          "macOS": 613
+        }
+      },
+      "location": {
+        "shannon_entropy": 1.9919,
+        "normalized_entropy": 0.9959,
+        "unique_values": 4,
+        "total_values": 5000,
+        "most_common": {
+          "Internal": 1408,
+          "Remote": 1300,
+          "Data center": 1246
+        }
+      },
+      "lifecycle_stage": {
+        "shannon_entropy": 1.9537,
+        "normalized_entropy": 0.6512,
+        "unique_values": 8,
+        "total_values": 5000,
+        "most_common": {
+          "Production": 2713,
+          "Development": 1023,
+          "Staging": 521
+        }
+      },
+      "internet_exposed": {
+        "shannon_entropy": 0.8703,
+        "normalized_entropy": 0.8703,
+        "unique_values": 2,
+        "total_values": 5000,
+        "most_common": {
+          "False": 3544,
+          "True": 1456
+        }
+      }
+    }
+  },
+  "enterprise_findings": {
+    "scenario": "enterprise_findings",
+    "total_records": 20000,
+    "columns": {
+      "detection_tool": {
+        "shannon_entropy": 2.8069,
+        "normalized_entropy": 0.9999,
+        "unique_values": 7,
+        "total_values": 20000,
+        "most_common": {
+          "Qualys": 2910,
+          "Nessus": 2909,
+          "Acunetix": 2898
+        }
+      },
+      "severity": {
+        "shannon_entropy": 1.8253,
+        "normalized_entropy": 0.7061,
+        "unique_values": 6,
+        "total_values": 20000,
+        "most_common": {
+          "MEDIUM": 9195,
+          "HIGH": 6757,
+          "CRITICAL": 1714
+        }
+      },
+      "cve_id": {
+        "shannon_entropy": 12.3995,
+        "normalized_entropy": 0.9799,
+        "unique_values": 6443,
+        "total_values": 20000,
+        "most_common": {
+          "CVE-2025-4634": 15,
+          "CVE-2025-49234": 15,
+          "CVE-2024-13779": 15
+        }
+      }
+    }
+  }
+}

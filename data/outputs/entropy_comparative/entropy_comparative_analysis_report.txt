@@ -1,0 +1,271 @@
+================================================================================
+SHANNON ENTROPY ANALYSIS REPORT
+================================================================================
+
+Generated on: 2025-08-19 00:37:51
+
+OVERVIEW:
+----------------------------------------
+Shannon entropy measures the diversity and randomness of categorical data.
+Higher entropy indicates more diverse/random distributions.
+Normalized entropy ranges from 0 (no diversity) to 1 (maximum diversity).
+
+SCENARIO SUMMARY:
+----------------------------------------
+ENTERPRISE_ASSETS Scenario:
+  Total Records: 1,000
+  Average Normalized Entropy: 0.8405 ± 0.1708
+  Diversity Level: Very High Diversity
+
+ENTERPRISE_FINDINGS Scenario:
+  Total Records: 20,000
+  Average Normalized Entropy: 0.9125 ± 0.1362
+  Diversity Level: Very High Diversity
+
+GOVERNMENT_ASSETS Scenario:
+  Total Records: 500
+  Average Normalized Entropy: 0.7479 ± 0.2113
+  Diversity Level: High Diversity
+
+GOVERNMENT_FINDINGS Scenario:
+  Total Records: 2,000
+  Average Normalized Entropy: 0.9269 ± 0.1173
+  Diversity Level: Very High Diversity
+
+SMALL_ASSETS Scenario:
+  Total Records: 50
+  Average Normalized Entropy: 0.5862 ± 0.2503
+  Diversity Level: Moderate Diversity
+
+SMALL_FINDINGS Scenario:
+  Total Records: 150
+  Average Normalized Entropy: 0.8320 ± 0.1654
+  Diversity Level: Very High Diversity
+
+DETAILED ANALYSIS BY COLUMN:
+================================================================================
+ENTERPRISE_ASSETS SCENARIO:
+----------------------------------------
+Column: location
+  Shannon Entropy: 1.9523 bits
+  Normalized Entropy: 0.9761
+  Unique Values: 4
+  Total Values: 1,000
+  Diversity Level: Very High Diversity
+  Most Common Values:
+    Internal: 354 (35.4%)
+    Remote: 254 (25.4%)
+    Data center: 212 (21.2%)
+
+Column: lifecycle_stage
+  Shannon Entropy: 1.9461 bits
+  Normalized Entropy: 0.6487
+  Unique Values: 8
+  Total Values: 1,000
+  Diversity Level: High Diversity
+  Most Common Values:
+    Production: 598 (59.8%)
+    Development: 157 (15.7%)
+    Staging: 75 (7.5%)
+
+Column: internet_exposed
+  Shannon Entropy: 0.8966 bits
+  Normalized Entropy: 0.8966
+  Unique Values: 2
+  Total Values: 1,000
+  Diversity Level: Very High Diversity
+  Most Common Values:
+    False: 687 (68.7%)
+    True: 313 (31.3%)
+
+
+ENTERPRISE_FINDINGS SCENARIO:
+----------------------------------------
+Column: detection_tool
+  Shannon Entropy: 2.3219 bits
+  Normalized Entropy: 1.0000
+  Unique Values: 5
+  Total Values: 20,000
+  Diversity Level: Very High Diversity
+  Most Common Values:
+    Nessus: 4,052 (20.3%)
+    Qualys: 4,011 (20.1%)
+    OpenVAS: 3,994 (20.0%)
+
+Column: severity
+  Shannon Entropy: 1.7545 bits
+  Normalized Entropy: 0.7556
+  Unique Values: 5
+  Total Values: 20,000
+  Diversity Level: High Diversity
+  Most Common Values:
+    MEDIUM: 9,096 (45.5%)
+    HIGH: 7,285 (36.4%)
+    CRITICAL: 1,992 (10.0%)
+
+Column: cve_id
+  Shannon Entropy: 11.9418 bits
+  Normalized Entropy: 0.9818
+  Unique Values: 4,586
+  Total Values: 20,000
+  Diversity Level: Very High Diversity
+  Most Common Values:
+    CVE-2024-57011: 16 (0.1%)
+    CVE-2025-32842: 15 (0.1%)
+    CVE-2024-27403: 15 (0.1%)
+
+
+GOVERNMENT_ASSETS SCENARIO:
+----------------------------------------
+Column: location
+  Shannon Entropy: 1.7776 bits
+  Normalized Entropy: 0.8888
+  Unique Values: 4
+  Total Values: 500
+  Diversity Level: Very High Diversity
+  Most Common Values:
+    Internal: 189 (37.8%)
+    Data center: 180 (36.0%)
+    Remote: 99 (19.8%)
+
+Column: lifecycle_stage
+  Shannon Entropy: 1.4173 bits
+  Normalized Entropy: 0.5049
+  Unique Values: 7
+  Total Values: 500
+  Diversity Level: Moderate Diversity
+  Most Common Values:
+    Production: 373 (74.6%)
+    Testing: 40 (8.0%)
+    Development: 30 (6.0%)
+
+Column: internet_exposed
+  Shannon Entropy: 0.8499 bits
+  Normalized Entropy: 0.8499
+  Unique Values: 2
+  Total Values: 500
+  Diversity Level: Very High Diversity
+  Most Common Values:
+    False: 362 (72.4%)
+    True: 138 (27.6%)
+
+
+GOVERNMENT_FINDINGS SCENARIO:
+----------------------------------------
+Column: detection_tool
+  Shannon Entropy: 2.8047 bits
+  Normalized Entropy: 0.9990
+  Unique Values: 7
+  Total Values: 2,000
+  Diversity Level: Very High Diversity
+  Most Common Values:
+    Acunetix: 320 (16.0%)
+    Nexpose: 302 (15.1%)
+    OpenVAS: 284 (14.2%)
+
+Column: severity
+  Shannon Entropy: 1.8380 bits
+  Normalized Entropy: 0.7916
+  Unique Values: 5
+  Total Values: 2,000
+  Diversity Level: High Diversity
+  Most Common Values:
+    MEDIUM: 887 (44.4%)
+    HIGH: 700 (35.0%)
+    CRITICAL: 188 (9.4%)
+
+Column: cve_id
+  Shannon Entropy: 10.5097 bits
+  Normalized Entropy: 0.9901
+  Unique Values: 1,568
+  Total Values: 2,000
+  Diversity Level: Very High Diversity
+  Most Common Values:
+    CVE-2025-23016: 5 (0.2%)
+    CVE-2025-49440: 4 (0.2%)
+    CVE-2025-6817: 4 (0.2%)
+
+
+SMALL_ASSETS SCENARIO:
+----------------------------------------
+Column: location
+  Shannon Entropy: 1.7471 bits
+  Normalized Entropy: 0.8736
+  Unique Values: 4
+  Total Values: 50
+  Diversity Level: Very High Diversity
+  Most Common Values:
+    Internal: 23 (46.0%)
+    Remote: 12 (24.0%)
+    Data center: 12 (24.0%)
+
+Column: lifecycle_stage
+  Shannon Entropy: 1.0756 bits
+  Normalized Entropy: 0.4161
+  Unique Values: 6
+  Total Values: 50
+  Diversity Level: Moderate Diversity
+  Most Common Values:
+    Production: 41 (82.0%)
+    Decommissioned: 3 (6.0%)
+    Staging: 2 (4.0%)
+
+Column: internet_exposed
+  Shannon Entropy: 0.4690 bits
+  Normalized Entropy: 0.4690
+  Unique Values: 2
+  Total Values: 50
+  Diversity Level: Moderate Diversity
+  Most Common Values:
+    False: 45 (90.0%)
+    True: 5 (10.0%)
+
+
+SMALL_FINDINGS SCENARIO:
+----------------------------------------
+Column: detection_tool
+  Shannon Entropy: 2.7918 bits
+  Normalized Entropy: 0.9945
+  Unique Values: 7
+  Total Values: 150
+  Diversity Level: Very High Diversity
+  Most Common Values:
+    Acunetix: 26 (17.3%)
+    Nexpose: 24 (16.0%)
+    Tenable.io: 23 (15.3%)
+
+Column: severity
+  Shannon Entropy: 1.5415 bits
+  Normalized Entropy: 0.6639
+  Unique Values: 5
+  Total Values: 150
+  Diversity Level: High Diversity
+  Most Common Values:
+    HIGH: 84 (56.0%)
+    MEDIUM: 46 (30.7%)
+    CRITICAL: 11 (7.3%)
+
+Column: cve_id
+  Shannon Entropy: 5.4649 bits
+  Normalized Entropy: 0.8377
+  Unique Values: 92
+  Total Values: 150
+  Diversity Level: Very High Diversity
+  Most Common Values:
+    CVE-2022-23205: 27 (18.0%)
+    CVE-2021-40163: 26 (17.3%)
+    CVE-2010-5109: 2 (1.3%)
+
+
+RECOMMENDATIONS:
+================================================================================
+• Inconsistent Diversity: Significant differences in data diversity between scenarios. Consider reviewing data generation parameters for consistency.
+
+• High entropy values (>0.8) indicate good data diversity and realistic distributions.
+• Low entropy values (<0.3) may indicate over-concentration in certain categories.
+• Consider balancing data generation to achieve moderate to high entropy across all scenarios.
+• Monitor entropy over time to ensure data quality remains consistent.
+
+================================================================================
+End of Report
+================================================================================

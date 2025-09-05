@@ -1,0 +1,398 @@
+{
+  "enterprise_assets": {
+    "scenario": "enterprise_assets",
+    "total_records": 5000,
+    "columns": {
+      "type": {
+        "shannon_entropy": 3.508,
+        "normalized_entropy": 0.7651,
+        "unique_values": 24,
+        "total_values": 5000,
+        "most_common": {
+          "Desktop": 1257,
+          "Laptop": 954,
+          "Virtual machine": 601
+        }
+      },
+      "os_family": {
+        "shannon_entropy": 2.0771,
+        "normalized_entropy": 0.6924,
+        "unique_values": 8,
+        "total_values": 5000,
+        "most_common": {
+          "Windows": 2137,
+          "Linux": 1549,
+          "macOS": 613
+        }
+      },
+      "location": {
+        "shannon_entropy": 1.9919,
+        "normalized_entropy": 0.9959,
+        "unique_values": 4,
+        "total_values": 5000,
+        "most_common": {
+          "Internal": 1408,
+          "Remote": 1300,
+          "Data center": 1246
+        }
+      },
+      "lifecycle_stage": {
+        "shannon_entropy": 1.9537,
+        "normalized_entropy": 0.6512,
+        "unique_values": 8,
+        "total_values": 5000,
+        "most_common": {
+          "Production": 2713,
+          "Development": 1023,
+          "Staging": 521
+        }
+      },
+      "internet_exposed": {
+        "shannon_entropy": 0.8703,
+        "normalized_entropy": 0.8703,
+        "unique_values": 2,
+        "total_values": 5000,
+        "most_common": {
+          "False": 3544,
+          "True": 1456
+        }
+      }
+    }
+  },
+  "enterprise_findings": {
+    "scenario": "enterprise_findings",
+    "total_records": 20000,
+    "columns": {
+      "detection_tool": {
+        "shannon_entropy": 2.8069,
+        "normalized_entropy": 0.9999,
+        "unique_values": 7,
+        "total_values": 20000,
+        "most_common": {
+          "Qualys": 2910,
+          "Nessus": 2909,
+          "Acunetix": 2898
+        }
+      },
+      "severity": {
+        "shannon_entropy": 1.8253,
+        "normalized_entropy": 0.7061,
+        "unique_values": 6,
+        "total_values": 20000,
+        "most_common": {
+          "MEDIUM": 9195,
+          "HIGH": 6757,
+          "CRITICAL": 1714
+        }
+      },
+      "cve_id": {
+        "shannon_entropy": 12.3995,
+        "normalized_entropy": 0.9799,
+        "unique_values": 6443,
+        "total_values": 20000,
+        "most_common": {
+          "CVE-2025-4634": 15,
+          "CVE-2025-49234": 15,
+          "CVE-2024-13779": 15
+        }
+      }
+    }
+  },
+  "government_assets": {
+    "scenario": "government_assets",
+    "total_records": 500,
+    "columns": {
+      "type": {
+        "shannon_entropy": 3.24,
+        "normalized_entropy": 0.7497,
+        "unique_values": 20,
+        "total_values": 500,
+        "most_common": {
+          "Desktop": 161,
+          "Laptop": 67,
+          "Server": 54
+        }
+      },
+      "os_family": {
+        "shannon_entropy": 0.8951,
+        "normalized_entropy": 0.5647,
+        "unique_values": 3,
+        "total_values": 500,
+        "most_common": {
+          "Windows": 385,
+          "Linux": 102,
+          "Network": 13
+        }
+      },
+      "location": {
+        "shannon_entropy": 1.9641,
+        "normalized_entropy": 0.9821,
+        "unique_values": 4,
+        "total_values": 500,
+        "most_common": {
+          "Internal": 170,
+          "Data center": 122,
+          "Remote": 116
+        }
+      },
+      "lifecycle_stage": {
+        "shannon_entropy": 1.5228,
+        "normalized_entropy": 0.5076,
+        "unique_values": 8,
+        "total_values": 500,
+        "most_common": {
+          "Production": 365,
+          "Development": 44,
+          "Testing": 26
+        }
+      },
+      "internet_exposed": {
+        "shannon_entropy": 0.8635,
+        "normalized_entropy": 0.8635,
+        "unique_values": 2,
+        "total_values": 500,
+        "most_common": {
+          "False": 357,
+          "True": 143
+        }
+      }
+    }
+  },
+  "government_findings": {
+    "scenario": "government_findings",
+    "total_records": 2000,
+    "columns": {
+      "detection_tool": {
+        "shannon_entropy": 2.5838,
+        "normalized_entropy": 0.9996,
+        "unique_values": 6,
+        "total_values": 2000,
+        "most_common": {
+          "Nessus": 362,
+          "Retina": 332,
+          "Tenable.io": 332
+        }
+      },
+      "severity": {
+        "shannon_entropy": 1.8256,
+        "normalized_entropy": 0.7062,
+        "unique_values": 6,
+        "total_values": 2000,
+        "most_common": {
+          "MEDIUM": 900,
+          "HIGH": 686,
+          "CRITICAL": 225
+        }
+      },
+      "cve_id": {
+        "shannon_entropy": 10.2859,
+        "normalized_entropy": 0.9852,
+        "unique_values": 1390,
+        "total_values": 2000,
+        "most_common": {
+          "CVE-2024-3126": 6,
+          "CVE-2024-6253": 5,
+          "CVE-2024-40422": 5
+        }
+      }
+    }
+  },
+  "small_assets": {
+    "scenario": "small_assets",
+    "total_records": 50,
+    "columns": {
+      "type": {
+        "shannon_entropy": 2.0648,
+        "normalized_entropy": 0.7355,
+        "unique_values": 7,
+        "total_values": 50,
+        "most_common": {
+          "Desktop": 19,
+          "Laptop": 17,
+          "Server": 8
+        }
+      },
+      "os_family": {
+        "shannon_entropy": 1.4641,
+        "normalized_entropy": 0.6305,
+        "unique_values": 5,
+        "total_values": 50,
+        "most_common": {
+          "Windows": 34,
+          "Linux": 7,
+          "macOS": 5
+        }
+      },
+      "location": {
+        "shannon_entropy": 1.3871,
+        "normalized_entropy": 0.6935,
+        "unique_values": 4,
+        "total_values": 50,
+        "most_common": {
+          "Remote": 23,
+          "Internal": 23,
+          "Data center": 3
+        }
+      },
+      "lifecycle_stage": {
+        "shannon_entropy": 1.2881,
+        "normalized_entropy": 0.4983,
+        "unique_values": 6,
+        "total_values": 50,
+        "most_common": {
+          "Production": 38,
+          "Development": 5,
+          "Maintenance": 3
+        }
+      },
+      "internet_exposed": {
+        "shannon_entropy": 0.5842,
+        "normalized_entropy": 0.5842,
+        "unique_values": 2,
+        "total_values": 50,
+        "most_common": {
+          "False": 43,
+          "True": 7
+        }
+      }
+    }
+  },
+  "small_findings": {
+    "scenario": "small_findings",
+    "total_records": 200,
+    "columns": {
+      "detection_tool": {
+        "shannon_entropy": 1.5504,
+        "normalized_entropy": 0.9782,
+        "unique_values": 3,
+        "total_values": 200,
+        "most_common": {
+          "Nessus": 83,
+          "Qualys": 69,
+          "OpenVAS": 48
+        }
+      },
+      "severity": {
+        "shannon_entropy": 1.7834,
+        "normalized_entropy": 0.7681,
+        "unique_values": 5,
+        "total_values": 200,
+        "most_common": {
+          "MEDIUM": 86,
+          "HIGH": 78,
+          "UNKNOWN": 13
+        }
+      },
+      "cve_id": {
+        "shannon_entropy": 7.4463,
+        "normalized_entropy": 0.9929,
+        "unique_values": 181,
+        "total_values": 200,
+        "most_common": {
+          "CVE-2025-31134": 3,
+          "CVE-2024-20694": 3,
+          "CVE-2024-8590": 2
+        }
+      }
+    }
+  },
+  "baseline_assets": {
+    "scenario": "baseline_assets",
+    "total_records": 10000,
+    "columns": {
+      "type": {
+        "shannon_entropy": 3.3018,
+        "normalized_entropy": 0.7201,
+        "unique_values": 24,
+        "total_values": 10000,
+        "most_common": {
+          "Desktop": 2486,
+          "Laptop": 2073,
+          "Mobile device": 1513
+        }
+      },
+      "os_family": {
+        "shannon_entropy": 1.9754,
+        "normalized_entropy": 0.6585,
+        "unique_values": 8,
+        "total_values": 10000,
+        "most_common": {
+          "Windows": 4656,
+          "Linux": 2529,
+          "Mobile": 1513
+        }
+      },
+      "location": {
+        "shannon_entropy": 1.7375,
+        "normalized_entropy": 0.8687,
+        "unique_values": 4,
+        "total_values": 10000,
+        "most_common": {
+          "Remote": 4187,
+          "Internal": 3722,
+          "Data center": 1091
+        }
+      },
+      "lifecycle_stage": {
+        "shannon_entropy": 1.906,
+        "normalized_entropy": 0.6353,
+        "unique_values": 8,
+        "total_values": 10000,
+        "most_common": {
+          "Production": 6055,
+          "Development": 1519,
+          "Staging": 774
+        }
+      },
+      "internet_exposed": {
+        "shannon_entropy": 0.6121,
+        "normalized_entropy": 0.6121,
+        "unique_values": 2,
+        "total_values": 10000,
+        "most_common": {
+          "False": 8491,
+          "True": 1509
+        }
+      }
+    }
+  },
+  "baseline_findings": {
+    "scenario": "baseline_findings",
+    "total_records": 50000,
+    "columns": {
+      "detection_tool": {
+        "shannon_entropy": 2.8073,
+        "normalized_entropy": 1.0,
+        "unique_values": 7,
+        "total_values": 50000,
+        "most_common": {
+          "Qualys": 7247,
+          "Tenable.io": 7194,
+          "Nexpose": 7173
+        }
+      },
+      "severity": {
+        "shannon_entropy": 1.4824,
+        "normalized_entropy": 0.6384,
+        "unique_values": 5,
+        "total_values": 50000,
+        "most_common": {
+          "HIGH": 26223,
+          "MEDIUM": 19090,
+          "CRITICAL": 2130
+        }
+      },
+      "cve_id": {
+        "shannon_entropy": 8.6822,
+        "normalized_entropy": 0.7175,
+        "unique_values": 4391,
+        "total_values": 50000,
+        "most_common": {
+          "CVE-2015-0592": 3984,
+          "CVE-2025-43229": 3223,
+          "CVE-2025-24213": 3141
+        }
+      }
+    }
+  }
+}
