@@ -42,10 +42,10 @@ python evaluations/scenario_statistics.py
 - `data/outputs/findings.json` - Baseline findings data
 
 **Outputs**:
-- `data/outputs/statistical_analysis_report.txt` - Comprehensive statistical report
-- `data/outputs/asset_type_distribution.png` - Asset type distribution visualization
-- `data/outputs/security_posture_comparison.png` - Security posture comparison chart
-- `data/outputs/software_distribution.png` - Software package distribution visualization
+- `data/outputs/scenario_statistics/statistical_analysis_report.txt` - Comprehensive statistical report
+- `data/outputs/scenario_statistics/asset_type_distribution.png` - Asset type distribution visualization
+- `data/outputs/scenario_statistics/security_posture_comparison.png` - Security posture comparison chart
+- `data/outputs/scenario_statistics/software_distribution.png` - Software package distribution visualization
 - Console output with summary statistics
 
 **Interpretation**:

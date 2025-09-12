@@ -245,10 +245,10 @@ class ScenarioStatistics:
         
         return patterns
     
-    def generate_visualizations(self, output_dir: str = "data/outputs") -> None:
+    def generate_visualizations(self, output_dir: str = "data/outputs/scenario_statistics") -> None:
         """Generate statistical visualizations."""
         output_path = Path(output_dir)
-        output_path.mkdir(exist_ok=True)
+        output_path.mkdir(parents=True, exist_ok=True)
         
         # 1. Asset type distribution comparison
         plt.figure(figsize=(15, 8))
@@ -381,7 +381,7 @@ class ScenarioStatistics:
         
         return vuln_stats
     
-    def generate_report(self, output_file: str = "data/outputs/statistical_analysis_report.txt") -> None:
+    def generate_report(self, output_file: str = "data/outputs/scenario_statistics/statistical_analysis_report.txt") -> None:
         """Generate comprehensive statistical analysis report."""
         output_path = Path(output_file)
         output_path.parent.mkdir(parents=True, exist_ok=True)
@@ -549,19 +549,19 @@ def run_analysis(analyzer, analysis_type):
     # Generate comprehensive report
     print("📋 Generating comprehensive report...")
     if analysis_type == "full":
-        analyzer.generate_report("data/outputs/statistical_analysis_full_report.txt")
+        analyzer.generate_report("data/outputs/scenario_statistics/statistical_analysis_full_report.txt")
     else:
         analyzer.generate_report()
     
     print(f"\n✅ {analysis_type.title()} statistical analysis completed successfully!")
     print("\n📁 Output files:")
     if analysis_type == "full":
-        print("   - data/outputs/statistical_analysis_full_report.txt")
+        print("   - data/outputs/scenario_statistics/statistical_analysis_full_report.txt")
     else:
-        print("   - data/outputs/statistical_analysis_report.txt")
-    print("   - data/outputs/asset_type_distribution.png")
-    print("   - data/outputs/security_posture_comparison.png")
-    print("   - data/outputs/vulnerability_distribution.png")
+        print("   - data/outputs/scenario_statistics/statistical_analysis_report.txt")
+    print("   - data/outputs/scenario_statistics/asset_type_distribution.png")
+    print("   - data/outputs/scenario_statistics/security_posture_comparison.png")
+    print("   - data/outputs/scenario_statistics/software_distribution.png")
 
 def main():
     """Main function to run statistical analysis."""
