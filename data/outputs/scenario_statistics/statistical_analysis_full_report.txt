@@ -1,0 +1,185 @@
+================================================================================
+STATISTICAL ANALYSIS REPORT - SYNTHETIC VULNERABILITY DATASETS
+================================================================================
+
+1. DESCRIPTIVE STATISTICS
+----------------------------------------
+
+SMALL SCENARIO:
+  Total Assets: 50
+  Internet Exposure Rate: 14.0%
+  Endpoint Security Rate: 50.0%
+  Firewall Active Rate: 40.0%
+  Avg Open Ports per Asset: 2.2
+  Avg Software Packages per Asset: 9.4
+
+  Top 5 Asset Types:
+    Desktop: 19 (38.0%)
+    Laptop: 17 (34.0%)
+    Server: 8 (16.0%)
+    Mobile device: 3 (6.0%)
+    Storage server: 1 (2.0%)
+
+ENTERPRISE SCENARIO:
+  Total Assets: 5,000
+  Internet Exposure Rate: 29.1%
+  Endpoint Security Rate: 75.2%
+  Firewall Active Rate: 72.5%
+  Avg Open Ports per Asset: 1.8
+  Avg Software Packages per Asset: 10.0
+
+  Top 5 Asset Types:
+    Desktop: 1257 (25.1%)
+    Laptop: 954 (19.1%)
+    Virtual machine: 601 (12.0%)
+    Workstation: 339 (6.8%)
+    Server: 333 (6.7%)
+
+GOVERNMENT SCENARIO:
+  Total Assets: 500
+  Internet Exposure Rate: 28.6%
+  Endpoint Security Rate: 89.8%
+  Firewall Active Rate: 87.8%
+  Avg Open Ports per Asset: 2.4
+  Avg Software Packages per Asset: 9.9
+
+  Top 5 Asset Types:
+    Desktop: 161 (32.2%)
+    Laptop: 67 (13.4%)
+    Server: 54 (10.8%)
+    Workstation: 50 (10.0%)
+    Database server: 31 (6.2%)
+
+BASELINE SCENARIO:
+  Total Assets: 10,000
+  Internet Exposure Rate: 15.1%
+  Endpoint Security Rate: 61.7%
+  Firewall Active Rate: 66.9%
+  Avg Open Ports per Asset: 2.8
+  Avg Software Packages per Asset: 10.4
+
+  Top 5 Asset Types:
+    Desktop: 2486 (24.9%)
+    Laptop: 2073 (20.7%)
+    Mobile device: 1513 (15.1%)
+    Server: 823 (8.2%)
+    Workstation: 783 (7.8%)
+
+
+2. COMPARATIVE ANALYSIS
+----------------------------------------
+
+Security Posture Comparison:
+
+SMALL:
+  Internet Exposure: 14.0%
+  Endpoint Security: 50.0%
+  Firewall Active: 40.0%
+  Avg Open Ports: 2.2
+  Avg Software Packages: 9.4
+
+ENTERPRISE:
+  Internet Exposure: 29.1%
+  Endpoint Security: 75.2%
+  Firewall Active: 72.5%
+  Avg Open Ports: 1.8
+  Avg Software Packages: 10.0
+
+GOVERNMENT:
+  Internet Exposure: 28.6%
+  Endpoint Security: 89.8%
+  Firewall Active: 87.8%
+  Avg Open Ports: 2.4
+  Avg Software Packages: 9.9
+
+BASELINE:
+  Internet Exposure: 15.1%
+  Endpoint Security: 61.7%
+  Firewall Active: 66.9%
+  Avg Open Ports: 2.8
+  Avg Software Packages: 10.4
+
+
+3. STATISTICAL SIGNIFICANCE TESTS
+----------------------------------------
+
+INTERNET EXPOSURE CHI2:
+  Chi-square statistic: 434.2997
+  P-value: 0.000000
+  Significant (α=0.05): Yes
+
+SOFTWARE COUNTS KRUSKAL:
+  Test statistic: 4.1430
+  P-value: 0.246432
+  Significant (α=0.05): No
+
+OPEN PORTS KRUSKAL:
+  Test statistic: 3212.2687
+  P-value: 0.000000
+  Significant (α=0.05): Yes
+
+
+4. VULNERABILITY PATTERN ANALYSIS
+----------------------------------------
+
+SMALL VULNERABILITIES:
+  Total: 200
+  Severity Distribution:
+    MEDIUM: 86 (43.0%)
+    HIGH: 78 (39.0%)
+    UNKNOWN: 13 (6.5%)
+    CRITICAL: 12 (6.0%)
+    LOW: 11 (5.5%)
+  CVE Year Statistics:
+    Range: 2015 - 2025
+    Recent CVEs (2020+): 198 (99.0%)
+  Asset Coverage:
+    Assets with vulnerabilities: 49
+    Avg vulnerabilities per asset: 4.1
+
+ENTERPRISE VULNERABILITIES:
+  Total: 20,000
+  Severity Distribution:
+    MEDIUM: 9195 (46.0%)
+    HIGH: 6757 (33.8%)
+    CRITICAL: 1714 (8.6%)
+    UNKNOWN: 1373 (6.9%)
+    LOW: 958 (4.8%)
+    NONE: 3 (0.0%)
+  CVE Year Statistics:
+    Range: 1999 - 2025
+    Recent CVEs (2020+): 19962 (99.8%)
+  Asset Coverage:
+    Assets with vulnerabilities: 4904
+    Avg vulnerabilities per asset: 4.1
+
+GOVERNMENT VULNERABILITIES:
+  Total: 2,000
+  Severity Distribution:
+    MEDIUM: 900 (45.0%)
+    HIGH: 686 (34.3%)
+    CRITICAL: 225 (11.2%)
+    UNKNOWN: 94 (4.7%)
+    LOW: 93 (4.7%)
+    NONE: 2 (0.1%)
+  CVE Year Statistics:
+    Range: 1999 - 2025
+    Recent CVEs (2020+): 1945 (97.2%)
+  Asset Coverage:
+    Assets with vulnerabilities: 494
+    Avg vulnerabilities per asset: 4.0
+
+BASELINE VULNERABILITIES:
+  Total: 50,000
+  Severity Distribution:
+    HIGH: 26223 (52.4%)
+    MEDIUM: 19090 (38.2%)
+    CRITICAL: 2130 (4.3%)
+    UNKNOWN: 1456 (2.9%)
+    LOW: 1101 (2.2%)
+  CVE Year Statistics:
+    Range: 2000 - 2025
+    Recent CVEs (2020+): 41966 (83.9%)
+  Asset Coverage:
+    Assets with vulnerabilities: 9939
+    Avg vulnerabilities per asset: 5.0
