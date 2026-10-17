@@ -368,8 +368,9 @@ class SynthVulnGenerator:
         # Run NVD integration if requested
         if hasattr(args, 'nvd_integration') and args.nvd_integration:
             collection_type = getattr(args, 'nvd_collection_type', 'both')
-            print(f"\nRunning NVD Integration ({collection_type.upper()})...")
-            self._run_nvd_integration(collection_type)
+            source = getattr(args, 'nvd_source', 'api')
+            print(f"\nRunning NVD Integration ({collection_type.upper()}, {source})...")
+            self._run_nvd_integration(collection_type, source)
         
         asset_output_file = None
         
@@ -490,11 +491,12 @@ class SynthVulnGenerator:
             print(f"Error running findings generator: {e}")
             return None
     
-    def _run_nvd_integration(self, collection_type: str = 'both') -> bool:
+    def _run_nvd_integration(self, collection_type: str = 'both', source: str = 'api') -> bool:
         """Run the NVD integration to fetch vulnerability and/or CPE data.
         
         Args:
             collection_type (str): Type of data to collect - 'cves', 'cpes', or 'both'
+            source (str): 'api' (NVD REST API, needs a key) or 'feeds' (yearly data feeds)
         """
         try:
             # Import the NVD integration module
@@ -502,7 +504,7 @@ class SynthVulnGenerator:
             sys.path.insert(0, nvd_path)
             
             # Run the NVD integration with specified collection type
-            nvd(collection_type)
+            nvd(collection_type, source)
             print("NVD integration completed successfully!")
             return True
             
@@ -820,6 +822,9 @@ Examples:
                        help='Run NVD integration to fetch vulnerability data')
     parser.add_argument('--nvd-collection-type', type=str, choices=['cves', 'cpes', 'both'], default='both',
                        help='Type of NVD data to collect: cves, cpes, or both (default: both)')
+    parser.add_argument('--nvd-source', type=str, choices=['api', 'feeds'], default='api',
+                       help='NVD source: api (REST API, needs SYNTHVULN_SECRETS key) or feeds '
+                            '(yearly JSON data feeds, no key; CVEs only) (default: api)')
     parser.add_argument('--config', type=str, metavar='FILE',
                        help='Configuration file to use (default: generator_config.yaml). Pre-made options: scenario_small.yaml, scenario_enterprise.yaml, scenario_government.yaml')
     

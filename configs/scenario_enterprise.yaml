@@ -844,6 +844,12 @@ cpe_config:
       older: 0.25              # 25% older versions
       legacy: 0.10             # 10% legacy versions
 
+  # Match findings to installed software via NVD CPE criteria and version ranges
+  cpe_based_vulnerability_matching:
+    enabled: true
+    max_vulnerabilities_per_asset: 0   # 0 = no cap; sample from every affected CVE
+    fallback_to_random: false          # true findings require an affected CVE
+
 # Software count ranges (high diversity)
 software_count_ranges:
   Desktop:

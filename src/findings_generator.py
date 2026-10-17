@@ -29,6 +29,7 @@ class FindingsGenerator:
     _vulnerability_cache = None
     _cache_timestamp = None
     _cpe_vulnerability_index = None
+    _cpe_lookup_cache = {}
     _parsed_cpe_cache = {}
     
     def __init__(self, config_file: str = "configs/generator_config.yaml"):
@@ -372,7 +373,9 @@ class FindingsGenerator:
             FindingsGenerator._cache_timestamp = current_time
             
             # Build CPE-to-vulnerability index for fast lookups
-            self._build_cpe_vulnerability_index(vulnerabilities)
+            self._build_cpe_vulnerability_index(
+                getattr(self, '_full_vulnerability_pool', None) or vulnerabilities
+            )
             
             self.logger.info(f"Loaded {len(vulnerabilities)} vulnerabilities from NVD database")
             
@@ -423,6 +426,9 @@ class FindingsGenerator:
                 with open(nvd_json_file, 'r', encoding='utf-8') as f:
                     flat_vulnerabilities = json.load(f)
                 self.logger.info(f"Loaded {len(flat_vulnerabilities)} vulnerabilities from flat JSON file")
+                # The CPE index is built from the full pool; the sampled pool below is
+                # only the fallback for findings that are not CPE-matched.
+                self._full_vulnerability_pool = flat_vulnerabilities
                 
                 # Pre-weighted vulnerability pool
                 # Apply recent bias and year weights if configured
@@ -781,53 +787,33 @@ class FindingsGenerator:
         return year_vulns
 
     def _build_cpe_vulnerability_index(self, vulnerabilities: List[Dict[str, Any]]):
-        """Build an index mapping CPE patterns to vulnerabilities for fast lookups.
-        
+        """Build an index mapping vendor:product to the vulnerable CPE match entries.
+
+        Each key holds (vulnerability, match) pairs, where match carries the NVD
+        criteria and its version range, so lookups can apply version semantics.
+
         Args:
             vulnerabilities: List of vulnerability dictionaries
         """
         start_time = time.time()
         index = {}
-        
+
         for vuln in vulnerabilities:
-            # Get CPE information from vulnerability
-            vuln_cpes = vuln.get('cpes', [])
-            cpe_matches = vuln.get('cpe_matches', [])
-            
-            # Extract CPE criteria from cpe_matches if cpes is empty
-            if not vuln_cpes and cpe_matches:
-                vuln_cpes = [match.get('criteria', '') for match in cpe_matches if match.get('vulnerable', False)]
-            
-            # Index each CPE pattern
-            for cpe in vuln_cpes:
-                if not cpe:
-                    continue
-                    
-                # Parse CPE for indexing
-                parsed_cpe = self._parse_cpe_cached(cpe)
-                if not parsed_cpe:
-                    continue
-                    
-                # Create index keys for different matching strategies
-                vendor = parsed_cpe.get('vendor', '')
-                product = parsed_cpe.get('product', '')
-                
+            matches = [m for m in vuln.get('cpe_matches', []) if m.get('vulnerable', False)]
+            if not matches:
+                # Year-directory format carries bare CPE strings without ranges
+                matches = [{'criteria': c} for c in vuln.get('cpes', []) if c]
+
+            for match in matches:
+                parsed_cpe = self._parse_cpe(match.get('criteria', ''))
+                vendor = parsed_cpe.get('vendor', '') if parsed_cpe else ''
+                product = parsed_cpe.get('product', '') if parsed_cpe else ''
                 if vendor and product:
-                    # Exact vendor:product key
-                    key = f"{vendor}:{product}"
-                    if key not in index:
-                        index[key] = []
-                    index[key].append(vuln)
-                    
-                    # Vendor-only key for broader matching
-                    vendor_key = f"vendor:{vendor}"
-                    if vendor_key not in index:
-                        index[vendor_key] = []
-                    index[vendor_key].append(vuln)
-        
-        # Store the index
+                    index.setdefault(f"{vendor}:{product}", []).append((vuln, match))
+
         FindingsGenerator._cpe_vulnerability_index = index
-        
+        FindingsGenerator._cpe_lookup_cache = {}
+
         build_time = time.time() - start_time
         self.logger.info(f"Built CPE vulnerability index with {len(index)} keys in {build_time:.2f}s")
 
@@ -880,6 +866,8 @@ class FindingsGenerator:
         
         findings = []
         base_timestamp = datetime.now() - timedelta(days=30)
+        self._biased_cpe_pool_cache = {}
+        self._unmatched_true_findings_skipped = 0
         
         # General vulnerability pool
         # Pull from available vulns and apply recent bias weighting if enabled
@@ -915,14 +903,25 @@ class FindingsGenerator:
                 cpe_lookups += 1
                 
                 if cpe_vulns and not is_false_positive:
-                    # CPE-matched vulnerability pool
-                    # Apply recent bias to CPE-matched vulnerabilities if enabled
+                    # CPE-matched vulnerability pool, recent-bias weighted once per asset
                     if self.bias_recent:
-                        cpe_vulns = self._apply_recent_bias_to_vulnerabilities(cpe_vulns)
+                        cache_key = asset["uuid"]
+                        weighted = self._biased_cpe_pool_cache.get(cache_key)
+                        if weighted is None:
+                            weighted = self._apply_recent_bias_to_vulnerabilities(cpe_vulns)
+                            self._biased_cpe_pool_cache[cache_key] = weighted
+                        cpe_vulns = weighted
                     # Use CPE-matched vulnerability
                     cve = random.choice(cpe_vulns)
                     finding["cpe_matched"] = True
                     self.logger.debug(f"Using CPE-matched vulnerability {cve['id']} for asset {asset['uuid']}")
+                elif not is_false_positive and not self._cpe_fallback_to_random():
+                    # No installed software on this asset is affected by a known CVE:
+                    # a scanner would report nothing, so no true finding is produced.
+                    self._unmatched_true_findings_skipped += 1
+                    if self._unmatched_true_findings_skipped > 100 * num_findings:
+                        raise RuntimeError("CPE matching produced no matches for any asset")
+                    continue
                 elif available_vulns:
                     # Fall back to random vulnerability selection
                     cve = random.choice(available_vulns)
@@ -990,7 +989,7 @@ class FindingsGenerator:
         Returns:
             List of vulnerabilities that match the asset's software CPEs
         """
-        if not self.cpe_mapping or not self.cpe_config.get('cpe_based_vulnerability_matching', {}).get('enabled', False):
+        if not self.cpe_config.get('cpe_based_vulnerability_matching', {}).get('enabled', False):
             return []
         
         # Use index-based lookup if available
@@ -1001,77 +1000,51 @@ class FindingsGenerator:
         return self._get_cpe_vulnerabilities_legacy(asset)
     
     def _get_cpe_vulnerabilities_indexed(self, asset: Dict[str, Any]) -> List[Dict[str, Any]]:
-        """Fast CPE-based vulnerability lookup using the pre-built index.
-        
+        """CPE-based vulnerability lookup using the pre-built index.
+
+        A CVE matches when one of its vulnerable CPE criteria names the same
+        vendor:product as an installed software entry and the software version
+        satisfies the criteria's version or version range. Results are ordered by
+        CVE id so sampling does not depend on index order.
+
         Args:
             asset: Asset dictionary containing installed software with CPE information
-            
+
         Returns:
             List of vulnerabilities that match the asset's software CPEs
         """
-        # Extract CPEs from asset's installed software
-        asset_cpes = set()
-        installed_software = asset.get('installed_software', [])
-        
-        for software in installed_software:
-            cpe = software.get('cpe')
-            if cpe:
-                asset_cpes.add(cpe)
-        
-        if not asset_cpes:
-            return []
-        
-        # Use index to find matching vulnerabilities
-        matching_vulns = set()  # Use set to avoid duplicates
+        index = FindingsGenerator._cpe_vulnerability_index or {}
+        lookup_cache = FindingsGenerator._cpe_lookup_cache
+        matched = {}
+
+        for software in asset.get('installed_software', []):
+            parsed_cpe = self._parse_cpe_cached(software.get('cpe', '') or '')
+            vendor = parsed_cpe.get('vendor', '') if parsed_cpe else ''
+            product = parsed_cpe.get('product', '') if parsed_cpe else ''
+            if not (vendor and product):
+                continue
+            version = parsed_cpe.get('version', '')
+            if version in ('', '-'):
+                version = str(software.get('version', '') or '')
+
+            cache_key = (vendor, product, version)
+            vulns = lookup_cache.get(cache_key)
+            if vulns is None:
+                vulns = {}
+                for vuln, match in index.get(f"{vendor}:{product}", []):
+                    if self._cpe_match_affects_version(match, version):
+                        vulns[vuln['id']] = vuln
+                lookup_cache[cache_key] = vulns
+            matched.update(vulns)
+
+        result = [matched[cve_id] for cve_id in sorted(matched)]
+
         cpe_vuln_config = self.cpe_config.get('cpe_based_vulnerability_matching', {})
         max_vulns_per_asset = cpe_vuln_config.get('max_vulnerabilities_per_asset', 20)
-        
-        for asset_cpe in asset_cpes:
-            parsed_cpe = self._parse_cpe_cached(asset_cpe)
-            if not parsed_cpe:
-                continue
-                
-            vendor = parsed_cpe.get('vendor', '')
-            product = parsed_cpe.get('product', '')
-            
-            if vendor and product:
-                # Look for exact vendor:product matches
-                key = f"{vendor}:{product}"
-                if FindingsGenerator._cpe_vulnerability_index is not None and key in FindingsGenerator._cpe_vulnerability_index:
-                    for vuln in FindingsGenerator._cpe_vulnerability_index[key]:
-                        if len(matching_vulns) >= max_vulns_per_asset:
-                            break
-                        # Verify the match with detailed comparison
-                        if self._cpe_matches_asset_detailed(vuln, asset_cpe, parsed_cpe):
-                            matching_vulns.add(id(vuln))  # Use object id to avoid duplicates
-                            
-                if len(matching_vulns) >= max_vulns_per_asset:
-                    break
-        
-        # Convert back to list of vulnerability objects
-        result_vulns = []
-        for asset_cpe in asset_cpes:
-            parsed_cpe = self._parse_cpe_cached(asset_cpe)
-            if not parsed_cpe:
-                continue
-                
-            vendor = parsed_cpe.get('vendor', '')
-            product = parsed_cpe.get('product', '')
-            
-            if vendor and product:
-                key = f"{vendor}:{product}"
-                if FindingsGenerator._cpe_vulnerability_index is not None and key in FindingsGenerator._cpe_vulnerability_index:
-                    for vuln in FindingsGenerator._cpe_vulnerability_index[key]:
-                        if len(result_vulns) >= max_vulns_per_asset:
-                            break
-                        if id(vuln) in matching_vulns and vuln not in result_vulns:
-                            result_vulns.append(vuln)
-                            
-                if len(result_vulns) >= max_vulns_per_asset:
-                    break
-        
-        return result_vulns
-    
+        if max_vulns_per_asset and len(result) > max_vulns_per_asset:
+            result = random.sample(result, max_vulns_per_asset)
+        return result
+
     def _get_cpe_vulnerabilities_legacy(self, asset: Dict[str, Any]) -> List[Dict[str, Any]]:
         """Legacy CPE-based vulnerability lookup (fallback method).
         
@@ -1239,6 +1212,61 @@ class FindingsGenerator:
         # This could be enhanced with version range checking
         return vuln_version == asset_version or vuln_version == '*'
     
+    _VERSION_TOKEN = re.compile(r"\d+|[A-Za-z]+")
+
+    @classmethod
+    def _version_key(cls, version: str) -> List[tuple]:
+        """Comparable key for a version string: numeric and alphabetic tokens."""
+        return [(0, int(tok), '') if tok.isdigit() else (1, 0, tok.lower())
+                for tok in cls._VERSION_TOKEN.findall(version or '')]
+
+    @classmethod
+    def _compare_versions(cls, a: str, b: str) -> int:
+        """Compare two version strings; returns -1, 0, or 1."""
+        ka, kb = cls._version_key(a), cls._version_key(b)
+        width = max(len(ka), len(kb))
+        ka += [(0, 0, '')] * (width - len(ka))
+        kb += [(0, 0, '')] * (width - len(kb))
+        return (ka > kb) - (ka < kb)
+
+    def _cpe_match_affects_version(self, match: Dict[str, Any], version: str) -> bool:
+        """Whether an NVD CPE match entry applies to a software version.
+
+        Follows NVD semantics: a specific criteria version must equal the software
+        version; a wildcard criteria applies to every version unless it carries a
+        versionStart/versionEnd range, in which case the version must fall inside
+        it. An unknown software version only matches unbounded wildcard criteria.
+        """
+        parsed = self._parse_cpe_cached(match.get('criteria', '') or '')
+        criteria_version = parsed.get('version', '') if parsed else ''
+        known = bool(self._version_key(version))
+
+        if criteria_version not in ('', '-'):
+            return known and self._compare_versions(version, criteria_version) == 0
+
+        start_inc = match.get('version_start_including', '')
+        start_exc = match.get('version_start_excluding', '')
+        end_inc = match.get('version_end_including', '')
+        end_exc = match.get('version_end_excluding', '')
+        if not (start_inc or start_exc or end_inc or end_exc):
+            return True
+        if not known:
+            return False
+        if start_inc and self._compare_versions(version, start_inc) < 0:
+            return False
+        if start_exc and self._compare_versions(version, start_exc) <= 0:
+            return False
+        if end_inc and self._compare_versions(version, end_inc) > 0:
+            return False
+        if end_exc and self._compare_versions(version, end_exc) >= 0:
+            return False
+        return True
+
+    def _cpe_fallback_to_random(self) -> bool:
+        """Whether a true finding with no CPE match falls back to a random CVE."""
+        return self.cpe_config.get('cpe_based_vulnerability_matching', {}).get(
+            'fallback_to_random', True)
+
     def _generate_timestamps(self, cve_year: int, base_timestamp: datetime) -> Dict[str, str]:
         """Generate the three timestamp fields for a vulnerability finding.
         
