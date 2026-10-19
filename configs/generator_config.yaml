@@ -957,6 +957,8 @@ cpe_config:
     exact_match_weight: 1.0        # Weight for exact CPE matches
     partial_match_weight: 0.7      # Weight for partial CPE matches (vendor/product)
     version_range_matching: true   # Enable version range matching
+    max_vulnerabilities_per_asset: 0   # 0 = no cap; sample from every affected CVE
+    fallback_to_random: false          # true findings require an affected CVE
     
   # Software installation patterns based on CPE data
   software_installation_patterns:

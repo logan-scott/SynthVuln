@@ -4,11 +4,15 @@ This module provides integration with the NVD API to fetch vulnerability data an
 The module can collect, process, and save both vulnerabilities and CPEs in JSON, CSV, and SQL formats.
 """
 
-import json
-import sys
-import os
 import csv
+import gzip
+import hashlib
+import json
+import os
+import sys
 import time
+import urllib.request
+from datetime import date
 from typing import List
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
@@ -23,6 +27,9 @@ NVD_SQL_FILE = os.path.join(NVD_BASE_DIR, 'nvd_vulnerabilities.sql')
 CPE_JSON_FILE = os.path.join(NVD_BASE_DIR, 'nvd_cpes.json')
 CPE_CSV_FILE = os.path.join(NVD_BASE_DIR, 'nvd_cpes.csv')
 CPE_SQL_FILE = os.path.join(NVD_BASE_DIR, 'nvd_cpes.sql')
+NVD_FEED_URL = 'https://nvd.nist.gov/feeds/json/cve/2.0/nvdcve-2.0-{year}.json.gz'
+NVD_FEED_META_URL = 'https://nvd.nist.gov/feeds/json/cve/2.0/nvdcve-2.0-{year}.meta'
+NVD_FEED_FIRST_YEAR = 2002
 logger = setup_logging('nvd_integration.log')
 
 
@@ -86,6 +93,45 @@ def collect(key: str, url: str, data_type: str = 'vulnerabilities') -> List:
     
     logger.info(f"{LOG_PREFIX}Collection completed: {len(collected_data)} {data_name} retrieved")
     return collected_data
+
+def collect_from_feeds(first_year: int = NVD_FEED_FIRST_YEAR, last_year: int | None = None) -> List:
+    """
+    Collect vulnerabilities from the NVD JSON 2.0 yearly data feeds.
+
+    The feeds need no API key. Each feed is checked against the SHA-256 published
+    in its .meta file, and rejected CVEs are dropped (matching the API's
+    noRejected filter). Items have the same structure as the API's
+    'vulnerabilities' entries, so process() handles both sources.
+
+    Args:
+        first_year: First feed year to download.
+        last_year: Last feed year to download (default: the current year).
+
+    Returns:
+        List of collected vulnerability data.
+    """
+    last_year = last_year or date.today().year
+    collected_data = []
+    for year in range(first_year, last_year + 1):
+        logger.info(f"{LOG_PREFIX}Downloading NVD feed for {year}...")
+        with urllib.request.urlopen(NVD_FEED_META_URL.format(year=year)) as resp:
+            meta = dict(
+                line.split(':', 1) for line in resp.read().decode('utf-8').splitlines() if ':' in line
+            )
+        with urllib.request.urlopen(NVD_FEED_URL.format(year=year)) as resp:
+            raw = gzip.decompress(resp.read())
+        expected = meta.get('sha256', '').strip().lower()
+        if hashlib.sha256(raw).hexdigest() != expected:
+            raise ValueError(f"NVD feed {year} failed its SHA-256 check")
+        items = json.loads(raw).get('vulnerabilities', [])
+        kept = [v for v in items if v.get('cve', {}).get('vulnStatus') != 'Rejected']
+        collected_data.extend(kept)
+        logger.info(f"{LOG_PREFIX}Feed {year}: {len(kept)} vulnerabilities "
+                    f"(last modified {meta.get('lastModifiedDate', '').strip()})")
+        time.sleep(1)
+    logger.info(f"{LOG_PREFIX}Feed collection completed: {len(collected_data)} vulnerabilities")
+    return collected_data
+
 
 def process(data: List, data_type: str = 'vulnerabilities') -> List | None:
     """
@@ -529,13 +575,28 @@ def save(processed: list) -> bool:
         logger.error(f"{LOG_PREFIX}Error saving vulnerabilities: {e}")
         return False
 
-def main(collection_type='both'):
+def main(collection_type='both', source='api'):
     """NVD Integration main function.
     
     Args:
         collection_type (str): Type of data to collect - 'cves', 'cpes', or 'both'
+        source (str): 'api' (NVD REST API, needs a key) or 'feeds' (yearly JSON
+            data feeds, no key; CVEs only)
     """
     try:
+        if source == 'feeds':
+            if collection_type not in ['cves', 'both']:
+                logger.error(f"{LOG_PREFIX}The feeds source provides CVEs only.")
+                return
+            processed = process(collect_from_feeds(), 'vulnerabilities')
+            if processed and save(processed):
+                logger.info(f"{LOG_PREFIX}Vulnerabilities integration completed successfully!")
+            else:
+                logger.error(f"{LOG_PREFIX}Error processing or saving feed vulnerabilities.")
+            if collection_type == 'cves':
+                return
+            collection_type = 'cpes'
+
         # Load NVD API key
         secrets = load_secrets()
         if 'nvd_key' not in secrets:

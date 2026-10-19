@@ -1,5 +1,7 @@
 # SynthVuln 
 
+Commit 953eb0b was available at original publication
+
 A comprehensive synthetic vulnerability data generator that creates realistic asset inventories and vulnerability findings for testing and simulation purposes.
 
 ## Overview
@@ -95,6 +97,9 @@ python synthvuln.py --run --nvd-integration --count-assets 100 --count-findings 
 
 # NVD integration only (CVEs and CPEs)
 python synthvuln.py --run --nvd-integration
+
+# CVEs from the NVD yearly JSON data feeds (no API key needed)
+python synthvuln.py --run --nvd-integration --nvd-source feeds --nvd-collection-type cves
 ```
 
 ## Output Formats
@@ -129,6 +134,11 @@ python synthvuln.py --run --nvd-integration
 - Configurable detection and false positive rates
 - Links findings to generated or existing assets
 - Realistic vulnerability data based on NVD database
+- CPE-based matching (`cpe_config.cpe_based_vulnerability_matching`): a finding's
+  CVE is drawn from the CVEs whose NVD CPE criteria name one of the asset's
+  installed products and whose version or version range covers the installed
+  version. With `fallback_to_random: false`, an asset with no affected software
+  gets no true findings; false positives always draw a random CVE
 
 ### Evaluation Analysis
 - **Prioritization Analysis**: Risk-based vulnerability prioritization using CVSS scores and asset criticality
