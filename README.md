@@ -1,5 +1,7 @@
 # SynthVuln 
 
+Commit 953eb0b was available at original publication
+
 A comprehensive synthetic vulnerability data generator that creates realistic asset inventories and vulnerability findings for testing and simulation purposes.
 
 ## Overview
